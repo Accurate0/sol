@@ -1,16 +1,19 @@
-const wow = 3
+const wow = 3;
 
 fn main(argv) {
-    let x = 2
-    let y = true
-    print("test")
-    print(1.3)
+    let x = 2;
+    let y = true;
+    let b = !false;
+    let z = (2 * 2) / ((3 - 4) * -2);
+    let a = (2 * 2) / 3;
+    print("test");
+    print(1.3);
 
 
-    print(x)
-    print(2)
+    print(x, x);
+    print(2);
 
-    test()
+    test();
 }
 
 fn test(){
@@ -18,13 +21,13 @@ fn test(){
 
     } else {
 // comment
-        print(2)
+        print(2);
     }
 }
 
 fn new_function(arg1, arg2, arg3) {
 {
 
-    test ()
+    test ();
 }
 }

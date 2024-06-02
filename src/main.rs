@@ -6,12 +6,15 @@ use std::{
 };
 
 use clap::{Parser as _, Subcommand};
+use compiler::Compiler;
 use lexer::Lexer;
 use parser::Parser;
 use tracing::Level;
 use tracing_subscriber::{filter::Targets, layer::SubscriberExt, util::SubscriberInitExt};
 
 mod ast;
+mod compiler;
+mod instructions;
 mod lexer;
 mod parser;
 
@@ -60,6 +63,8 @@ fn main() -> Result<(), Box<dyn Error>> {
 
             let program = parser.parse()?;
             tracing::info!("{:#?}", program);
+
+            let compiler = Compiler::new(program);
         }
     }
 

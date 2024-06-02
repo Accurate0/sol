@@ -1,6 +1,5 @@
-use crate::ast::Function;
 use crate::{
-    ast::{self, Expression, Program, Statement},
+    ast::{self},
     lexer::{Span, Token, TokenKind},
 };
 use std::{
@@ -27,21 +26,12 @@ pub enum ParserError {
         expected: TokenKind,
         actual: TokenKind,
     },
-
-    #[error("expected identifier: {0}, got {1}", expected, actual)]
-    InvalidIdentifier {
-        expected: &'static str,
-        actual: String,
-    },
-
     #[error("unexpected token: {0}", token)]
     UnexpectedToken { token: Token },
     #[error("error parsing float: {0}")]
     ParseFloatError(#[from] ParseFloatError),
     #[error("error parsing integer: {0}")]
     ParseIntegerError(#[from] ParseIntError),
-    #[error("unknown data store error")]
-    Unknown,
 }
 
 impl<'a, I> Parser<'a, I>
@@ -74,8 +64,8 @@ where
             .unwrap_or(&Token::new(TokenKind::EndOfFile, Span { start: 0, end: 0 }))
     }
 
-    pub fn parse(&mut self) -> Result<Program, ParserError> {
-        let mut program = Program {
+    pub fn parse(&mut self) -> Result<ast::Program, ParserError> {
+        let mut program = ast::Program {
             statements: Vec::default(),
         };
         loop {
@@ -87,8 +77,10 @@ where
             match self.peek() {
                 TokenKind::Identifier => {
                     let statement = self.parse_statement_identifier()?;
-                    tracing::info!("{:?}", statement);
                     program.statements.push(statement);
+                }
+                TokenKind::EndOfLine => {
+                    self.consume(TokenKind::EndOfLine)?;
                 }
                 _ => {
                     return Err(ParserError::UnexpectedToken {
@@ -106,6 +98,8 @@ where
         self.consume(TokenKind::Eq)?;
         // could be expr in future
         let literal = self.parse_literal()?;
+
+        self.consume(TokenKind::EndOfLine)?;
 
         Ok(ast::Statement::Const {
             name: name.to_owned(),
@@ -129,9 +123,11 @@ where
         let variable_name = self.consume(TokenKind::Identifier)?;
         self.consume(TokenKind::Eq)?;
 
-        let expression = self.parse_expression()?;
+        let expression = self.parse_expression(0)?;
 
-        Ok(Statement::Let {
+        self.consume(TokenKind::EndOfLine)?;
+
+        Ok(ast::Statement::Let {
             name: self.text(&variable_name).to_owned(),
             value: expression.into(),
         })
@@ -142,39 +138,106 @@ where
         let text = self.text(&token);
 
         let expr = if text == "true" {
-            Expression::Literal(ast::Literal::Boolean(true))
+            ast::Expression::Literal(ast::Literal::Boolean(true))
         } else if text == "false" {
-            Expression::Literal(ast::Literal::Boolean(false))
+            ast::Expression::Literal(ast::Literal::Boolean(false))
         } else if text.starts_with('"') && text.ends_with('"') {
-            Expression::Literal(ast::Literal::String(text[1..text.len() - 1].to_owned()))
+            ast::Expression::Literal(ast::Literal::String(text[1..text.len() - 1].to_owned()))
         } else if text.contains('.') {
-            Expression::Literal(ast::Literal::Float(text.parse()?))
+            ast::Expression::Literal(ast::Literal::Float(text.parse()?))
         } else {
-            Expression::Literal(ast::Literal::Integer(text.parse()?))
+            ast::Expression::Literal(ast::Literal::Integer(text.parse()?))
         };
 
         Ok(expr)
     }
 
-    fn parse_expression(&mut self) -> Result<ast::Expression, ParserError> {
-        match self.peek() {
-            TokenKind::Identifier => self.parse_expression_identifier(),
-            TokenKind::Literal => self.parse_literal(),
-            _ => Err(ParserError::UnexpectedToken {
-                token: self.peek_token(),
-            }),
+    fn parse_expression(&mut self, binding_power: u8) -> Result<ast::Expression, ParserError> {
+        let tk = self.peek_token();
+        dbg!(self.text(&tk));
+        let mut lhs = {
+            match self.peek() {
+                TokenKind::Identifier => return self.parse_expression_identifier(),
+                TokenKind::OpenParen => {
+                    self.consume(TokenKind::OpenParen)?;
+                    let expr = self.parse_expression(0)?;
+                    self.consume(TokenKind::CloseParen)?;
+                    Ok(expr)
+                }
+                TokenKind::Add | TokenKind::Subtract | TokenKind::Not => {
+                    let token = self.peek();
+                    self.consume(token)?;
+                    let op = match token {
+                        TokenKind::Add => ast::Operator::Plus,
+                        TokenKind::Subtract => ast::Operator::Minus,
+                        TokenKind::Not => ast::Operator::Not,
+                        _ => unreachable!(),
+                    };
+                    let ((), right_binding_power) = op.prefix_binding_power();
+                    let rhs = self.parse_expression(right_binding_power)?;
+
+                    Ok(ast::Expression::Prefix {
+                        op,
+                        expr: Box::new(rhs),
+                    })
+                }
+                TokenKind::Literal => self.parse_literal(),
+                _ => Err(ParserError::UnexpectedToken {
+                    token: self.peek_token(),
+                }),
+            }
+        };
+
+        loop {
+            let token = self.peek();
+            let op = match token {
+                TokenKind::Add => ast::Operator::Plus,
+                TokenKind::Subtract => ast::Operator::Minus,
+                TokenKind::Multiply => ast::Operator::Multiply,
+                TokenKind::Divide => ast::Operator::Divide,
+                TokenKind::CloseParen => break,
+                TokenKind::EndOfLine => break,
+
+                _ => {
+                    return Err(ParserError::UnexpectedToken {
+                        token: self.peek_token(),
+                    });
+                }
+            };
+
+            if let Some((left_binding_power, right_binding_power)) = op.infix_binding_power() {
+                if left_binding_power < binding_power {
+                    // previous operator has higher binding power than
+                    // new one --> end of expression
+                    break;
+                }
+
+                self.consume(token)?;
+                let rhs = self.parse_expression(right_binding_power)?;
+                lhs = Ok(ast::Expression::Infix {
+                    lhs: Box::new(lhs?),
+                    rhs: Box::new(rhs),
+                    op,
+                });
+
+                continue;
+            }
         }
+
+        lhs
     }
 
     fn parse_expression_identifier(&mut self) -> Result<ast::Expression, ParserError> {
         let name = self.consume(TokenKind::Identifier)?;
-        match self.text(&name) {
+        let expr = match self.text(&name) {
             // hmmmm
-            "true" => Ok(Expression::Literal(ast::Literal::Boolean(true))),
-            "false" => Ok(Expression::Literal(ast::Literal::Boolean(false))),
+            "true" => Ok(ast::Expression::Literal(ast::Literal::Boolean(true))),
+            "false" => Ok(ast::Expression::Literal(ast::Literal::Boolean(false))),
             name if self.peek() == TokenKind::OpenParen => self.parse_function_call(name),
             name => self.parse_variable(name),
-        }
+        }?;
+
+        Ok(expr)
     }
 
     fn parse_statement_identifier(&mut self) -> Result<ast::Statement, ParserError> {
@@ -202,13 +265,12 @@ where
             }
 
             let statement = self.parse_statement()?;
-            tracing::info!("{:?}", statement);
             statements.push(statement);
         }
 
         self.consume(TokenKind::CloseBrace)?;
 
-        Ok(Statement::Block { body: statements })
+        Ok(ast::Statement::Block { body: statements })
     }
 
     fn parse_if_statement(&mut self) -> Result<ast::Statement, ParserError> {
@@ -231,7 +293,7 @@ where
         })
     }
 
-    fn parse_else_statement(&mut self) -> Result<Statement, ParserError> {
+    fn parse_else_statement(&mut self) -> Result<ast::Statement, ParserError> {
         self.consume(TokenKind::Identifier)?;
         self.parse_block()
     }
@@ -250,11 +312,16 @@ where
                 break;
             }
 
-            let expr = self.parse_expression()?;
+            let expr = self.parse_expression(0)?;
             args.push(expr);
+
+            if self.peek() == TokenKind::Comma {
+                self.consume(TokenKind::Comma)?;
+            }
         }
 
         self.consume(TokenKind::CloseParen)?;
+        self.consume(TokenKind::EndOfLine)?;
 
         Ok(ast::Expression::FunctionCall {
             name: name.to_owned(),
@@ -340,7 +407,7 @@ mod tests {
     #[test]
     fn small_input() {
         let input = r#"
-            const wow = 3
+            const wow = 3;
             fn test() {}
         "#
         .to_owned();
@@ -368,19 +435,19 @@ mod tests {
     #[test]
     fn larger_test() {
         let input = r#"
-const wow = 3
+const wow = 3;
 
 fn main(argv) {
-    let x = 2
-    let y = true
-    print("test")
-    print(1.3)
+    let x = 2;
+    let y = true;
+    print("test");
+    print(1.3);
 
 
-    print(x)
-    print(2)
+    print(x);
+    print(2);
 
-    test()
+    test();
 }
 
 fn test(){
@@ -388,14 +455,14 @@ fn test(){
 
     } else {
 // comment
-        print(2)
+        print(2);
     }
 }
 
 fn new_function(arg1, arg2, arg3) {
 {
 
-    test ()
+    test ();
 }
 }"#
         .to_owned();
@@ -486,12 +553,99 @@ fn new_function(arg1, arg2, arg3) {
     }
 
     #[test]
+    fn complex_math() {
+        let input = r#"
+            fn test() {
+                let z = (2 * 2) / ((3 - 4) * -2);
+            }
+        "#
+        .to_owned();
+
+        let mut lexer = Lexer::new(&input);
+        let mut parser = Parser::new(&mut lexer, &input);
+        let program = parser.parse().unwrap();
+
+        assert_eq!(
+            program.statements,
+            vec![Statement::Function(Function::new(
+                "test".to_owned(),
+                vec![],
+                Statement::Block {
+                    body: vec![Statement::Let {
+                        name: "z".to_owned(),
+                        value: Expression::Infix {
+                            lhs: Box::new(Expression::Infix {
+                                lhs: Box::new(Expression::Literal(Literal::Integer(2))),
+                                op: Operator::Multiply,
+                                rhs: Box::new(Expression::Literal(Literal::Integer(2))),
+                            }),
+                            op: Operator::Divide,
+                            rhs: Box::new(Expression::Infix {
+                                lhs: Box::new(Expression::Infix {
+                                    lhs: Box::new(Expression::Literal(Literal::Integer(3))),
+                                    op: Operator::Minus,
+                                    rhs: Box::new(Expression::Literal(Literal::Integer(4))),
+                                }),
+                                op: Operator::Multiply,
+                                rhs: Box::new(Expression::Prefix {
+                                    op: Operator::Minus,
+                                    expr: Box::new(Expression::Literal(Literal::Integer(2))),
+                                }),
+                            }),
+                        }
+                        .into(),
+                    },]
+                }
+                .into()
+            ))]
+        )
+    }
+
+    #[test]
+    fn math() {
+        let input = r#"
+            fn test() {
+                let x = 1 + 2 / 3;
+            }
+        "#
+        .to_owned();
+
+        let mut lexer = Lexer::new(&input);
+        let mut parser = Parser::new(&mut lexer, &input);
+        let program = parser.parse().unwrap();
+
+        assert_eq!(
+            program.statements,
+            vec![Statement::Function(Function::new(
+                "test".to_owned(),
+                vec![],
+                Statement::Block {
+                    body: vec![Statement::Let {
+                        name: "x".to_owned(),
+                        value: Expression::Infix {
+                            lhs: Box::new(Expression::Literal(Literal::Integer(1))),
+                            rhs: Box::new(Expression::Infix {
+                                lhs: Box::new(Expression::Literal(Literal::Integer(2))),
+                                rhs: Box::new(Expression::Literal(Literal::Integer(3))),
+                                op: Operator::Divide,
+                            }),
+                            op: Operator::Plus,
+                        }
+                        .into(),
+                    },]
+                }
+                .into()
+            ))]
+        )
+    }
+
+    #[test]
     fn large_input() {
         let input = r#"
-        const wow = 3
+        const wow = 3;
         fn test(argv) {
             // this is a comment
-            let a = "hello"
+            let a = "hello";
         }
         "#
         .to_owned();

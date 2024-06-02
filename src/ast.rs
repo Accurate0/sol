@@ -46,10 +46,49 @@ pub enum Statement {
 }
 
 #[derive(Debug, PartialEq)]
+pub enum Operator {
+    Plus,
+    Minus,
+    Multiply,
+    Not,
+    Divide,
+}
+
+impl Operator {
+    // https://domenicquirl.github.io/blog/parsing-basics/
+    pub fn prefix_binding_power(&self) -> ((), u8) {
+        match self {
+            Self::Minus | Self::Plus | Self::Not => ((), 51),
+            _ => unreachable!(),
+        }
+    }
+
+    pub fn infix_binding_power(&self) -> Option<(u8, u8)> {
+        match self {
+            Self::Plus | Self::Minus => Some((9, 10)),
+            Self::Multiply | Self::Divide => Some((11, 12)),
+            _ => None,
+        }
+    }
+}
+
+#[derive(Debug, PartialEq)]
 pub enum Expression {
+    Prefix {
+        op: Operator,
+        expr: Box<Expression>,
+    },
+    Infix {
+        op: Operator,
+        lhs: Box<Expression>,
+        rhs: Box<Expression>,
+    },
     Literal(Literal),
     Variable(String),
-    FunctionCall { name: String, args: Vec<Expression> },
+    FunctionCall {
+        name: String,
+        args: Vec<Expression>,
+    },
 }
 
 #[derive(Debug)]
