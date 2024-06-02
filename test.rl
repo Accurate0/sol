@@ -6,6 +6,7 @@ fn main(argv) {
     let b = !false;
     let z = (2 * 2) / ((3 - 4) * -2);
     let a = (2 * 2) / 3;
+    let c = 2 * a;
     print("test");
     print(1.3);
 

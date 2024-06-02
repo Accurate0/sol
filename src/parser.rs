@@ -173,6 +173,7 @@ where
                         TokenKind::Not => ast::Operator::Not,
                         _ => unreachable!(),
                     };
+
                     let ((), right_binding_power) = op.prefix_binding_power();
                     let rhs = self.parse_expression(right_binding_power)?;
 
@@ -274,7 +275,7 @@ where
     }
 
     fn parse_if_statement(&mut self) -> Result<ast::Statement, ParserError> {
-        let condition = self.parse_expression_identifier()?;
+        let condition = self.parse_expression(0)?;
 
         let block = self.parse_block()?;
 
