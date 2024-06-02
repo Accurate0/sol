@@ -153,8 +153,8 @@ where
     }
 
     fn parse_expression(&mut self, binding_power: u8) -> Result<ast::Expression, ParserError> {
-        let tk = self.peek_token();
-        dbg!(self.text(&tk));
+        // let tk = self.peek_token();
+        // dbg!(self.text(&tk));
         let mut lhs = {
             match self.peek() {
                 TokenKind::Identifier => return self.parse_expression_identifier(),
