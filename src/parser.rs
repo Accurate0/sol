@@ -140,7 +140,12 @@ where
     fn parse_literal(&mut self) -> Result<ast::Expression, ParserError> {
         let token = self.consume(TokenKind::Literal)?;
         let text = self.text(&token);
-        let expr = if text.starts_with('"') && text.ends_with('"') {
+
+        let expr = if text == "true" {
+            Expression::Literal(ast::Literal::Boolean(true))
+        } else if text == "false" {
+            Expression::Literal(ast::Literal::Boolean(false))
+        } else if text.starts_with('"') && text.ends_with('"') {
             Expression::Literal(ast::Literal::String(text[1..text.len() - 1].to_owned()))
         } else if text.contains('.') {
             Expression::Literal(ast::Literal::Float(text.parse()?))
@@ -164,6 +169,9 @@ where
     fn parse_expression_identifier(&mut self) -> Result<ast::Expression, ParserError> {
         let name = self.consume(TokenKind::Identifier)?;
         match self.text(&name) {
+            // hmmmm
+            "true" => Ok(Expression::Literal(ast::Literal::Boolean(true))),
+            "false" => Ok(Expression::Literal(ast::Literal::Boolean(false))),
             name if self.peek() == TokenKind::OpenParen => self.parse_function_call(name),
             name => self.parse_variable(name),
         }
@@ -174,9 +182,7 @@ where
         match self.text(&identifier) {
             "let" => self.parse_let(),
             "const" => self.parse_const(),
-            "fn" => Ok(ast::Statement::Function {
-                function: self.parse_function()?,
-            }),
+            "fn" => Ok(ast::Statement::Function(self.parse_function()?)),
             "if" => self.parse_if_statement(),
             name if self.peek() == TokenKind::OpenParen => {
                 Ok(ast::Statement::Expression(self.parse_function_call(name)?))
@@ -321,5 +327,198 @@ where
             // tracing::info!("{}", self.text(&token));
             Some(token)
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::ast::*;
+    use crate::lexer::*;
+    use pretty_assertions::assert_eq;
+
+    #[test]
+    fn small_input() {
+        let input = r#"
+            const wow = 3
+            fn test() {}
+        "#
+        .to_owned();
+
+        let mut lexer = Lexer::new(&input);
+        let mut parser = Parser::new(&mut lexer, &input);
+        let program = parser.parse().unwrap();
+
+        assert_eq!(
+            program.statements,
+            vec![
+                Statement::Const {
+                    name: "wow".to_owned(),
+                    value: Expression::Literal(Literal::Integer(3)),
+                },
+                Statement::Function(Function::new(
+                    "test".to_owned(),
+                    vec![],
+                    Statement::Block { body: vec![] }.into()
+                )),
+            ]
+        );
+    }
+
+    #[test]
+    fn larger_test() {
+        let input = r#"
+const wow = 3
+
+fn main(argv) {
+    let x = 2
+    let y = true
+    print("test")
+    print(1.3)
+
+
+    print(x)
+    print(2)
+
+    test()
+}
+
+fn test(){
+    if true {
+
+    } else {
+// comment
+        print(2)
+    }
+}
+
+fn new_function(arg1, arg2, arg3) {
+{
+
+    test ()
+}
+}"#
+        .to_owned();
+
+        let mut lexer = Lexer::new(&input);
+        let mut parser = Parser::new(&mut lexer, &input);
+        let program = parser.parse().unwrap();
+
+        assert_eq!(
+            program.statements,
+            vec![
+                Statement::Const {
+                    name: "wow".to_owned(),
+                    value: Expression::Literal(Literal::Integer(3)),
+                },
+                Statement::Function(Function::new(
+                    "main".to_owned(),
+                    vec!["argv".to_owned()],
+                    Statement::Block {
+                        body: vec![
+                            Statement::Let {
+                                name: "x".to_owned(),
+                                value: Expression::Literal(Literal::Integer(2)).into(),
+                            },
+                            Statement::Let {
+                                name: "y".to_owned(),
+                                value: Expression::Literal(Literal::Boolean(true)).into(),
+                            },
+                            Statement::Expression(Expression::FunctionCall {
+                                name: "print".to_owned(),
+                                args: vec![Expression::Literal(Literal::String("test".to_owned()))],
+                            }),
+                            Statement::Expression(Expression::FunctionCall {
+                                name: "print".to_owned(),
+                                args: vec![Expression::Literal(Literal::Float(1.3))],
+                            }),
+                            Statement::Expression(Expression::FunctionCall {
+                                name: "print".to_owned(),
+                                args: vec![Expression::Variable("x".to_owned())],
+                            }),
+                            Statement::Expression(Expression::FunctionCall {
+                                name: "print".to_owned(),
+                                args: vec![Expression::Literal(Literal::Integer(2))],
+                            }),
+                            Statement::Expression(Expression::FunctionCall {
+                                name: "test".to_owned(),
+                                args: vec![],
+                            }),
+                        ],
+                    }
+                    .into(),
+                ),),
+                Statement::Function(Function::new(
+                    "test".to_owned(),
+                    vec![],
+                    Statement::Block {
+                        body: vec![Statement::If {
+                            condition: Expression::Literal(Literal::Boolean(true)).into(),
+                            body: Statement::Block { body: vec![] }.into(),
+                            else_statement: Some(
+                                Statement::Block {
+                                    body: vec![Statement::Expression(Expression::FunctionCall {
+                                        name: "print".to_owned(),
+                                        args: vec![Expression::Literal(Literal::Integer(2))],
+                                    }),]
+                                }
+                                .into()
+                            ),
+                        },]
+                    }
+                    .into()
+                ),),
+                Statement::Function(Function::new(
+                    "new_function".to_owned(),
+                    vec!["arg1".to_owned(), "arg2".to_owned(), "arg3".to_owned()],
+                    Statement::Block {
+                        body: vec![Statement::Block {
+                            body: vec![Statement::Expression(Expression::FunctionCall {
+                                name: "test".to_owned(),
+                                args: vec![],
+                            }),],
+                        },],
+                    }
+                    .into()
+                ))
+            ]
+        );
+    }
+
+    #[test]
+    fn large_input() {
+        let input = r#"
+        const wow = 3
+        fn test(argv) {
+            // this is a comment
+            let a = "hello"
+        }
+        "#
+        .to_owned();
+
+        let mut lexer = Lexer::new(&input);
+        let mut parser = Parser::new(&mut lexer, &input);
+        let program = parser.parse().unwrap();
+
+        assert_eq!(
+            program.statements,
+            vec![
+                Statement::Const {
+                    name: "wow".to_owned(),
+                    value: Expression::Literal(Literal::Integer(3)),
+                },
+                Statement::Function(Function::new(
+                    "test".to_owned(),
+                    vec!["argv".to_owned()],
+                    Statement::Block {
+                        body: vec![Statement::Let {
+                            name: "a".to_owned(),
+                            value: Expression::Literal(Literal::String("hello".to_owned())).into(),
+                        }]
+                    }
+                    .into()
+                )),
+            ]
+        );
     }
 }

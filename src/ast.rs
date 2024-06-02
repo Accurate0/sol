@@ -1,4 +1,4 @@
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct Function {
     name: String,
     parameters: Vec<String>,
@@ -15,14 +15,15 @@ impl Function {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum Literal {
     String(String),
     Float(f64),
     Integer(i64),
+    Boolean(bool),
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum Statement {
     Const {
         name: String,
@@ -40,13 +41,11 @@ pub enum Statement {
     Block {
         body: Vec<Statement>,
     },
-    Function {
-        function: Function,
-    },
+    Function(Function),
     Expression(Expression),
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum Expression {
     Literal(Literal),
     Variable(String),

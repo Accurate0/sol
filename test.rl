@@ -2,6 +2,7 @@ const wow = 3
 
 fn main(argv) {
     let x = 2
+    let y = true
     print("test")
     print(1.3)
 
