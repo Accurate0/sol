@@ -56,6 +56,7 @@ pub enum Operator {
 
 impl Operator {
     // https://domenicquirl.github.io/blog/parsing-basics/
+    // ... :)
     pub fn prefix_binding_power(&self) -> ((), u8) {
         match self {
             Self::Minus | Self::Plus | Self::Not => ((), 51),
