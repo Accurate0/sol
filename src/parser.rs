@@ -20,14 +20,13 @@ where
 pub enum ParserError {
     #[error("expected token: {0} not found", expected)]
     ExpectedTokenNotFound { expected: TokenKind },
-    #[error("expected token: {0}, got {1}, {2:?}", expected, actual, token)]
+    #[error("expected token: got {0}, expected: {1:?}", actual, expected)]
     InvalidToken {
-        token: Token,
         expected: TokenKind,
         actual: TokenKind,
     },
-    #[error("unexpected token: {0}", token)]
-    UnexpectedToken { token: Token },
+    #[error("unexpected token: {0}, {1}", token, text)]
+    UnexpectedToken { token: Token, text: String },
     #[error("error parsing float: {0}")]
     ParseFloatError(#[from] ParseFloatError),
     #[error("error parsing integer: {0}")]
@@ -64,10 +63,11 @@ where
             .unwrap_or(&Token::new(TokenKind::EndOfFile, Span { start: 0, end: 0 }))
     }
 
-    pub fn parse(&mut self) -> Result<ast::Program, ParserError> {
-        let mut program = ast::Program {
+    pub fn parse(&mut self) -> Result<ast::ParsedProgram, ParserError> {
+        let mut program = ast::ParsedProgram {
             statements: Vec::default(),
         };
+
         loop {
             let token = self.peek();
             if token == TokenKind::EndOfFile {
@@ -83,9 +83,11 @@ where
                     self.consume(TokenKind::EndOfLine)?;
                 }
                 _ => {
+                    let peeked_token = self.peek_token();
                     return Err(ParserError::UnexpectedToken {
-                        token: self.peek_token(),
-                    })
+                        token: peeked_token,
+                        text: self.text(&peeked_token).to_owned(),
+                    });
                 }
             };
         }
@@ -153,11 +155,9 @@ where
     }
 
     fn parse_expression(&mut self, binding_power: u8) -> Result<ast::Expression, ParserError> {
-        // let tk = self.peek_token();
-        // dbg!(self.text(&tk));
         let mut lhs = {
             match self.peek() {
-                TokenKind::Identifier => return self.parse_expression_identifier(),
+                TokenKind::Identifier => self.parse_expression_identifier(),
                 TokenKind::OpenParen => {
                     self.consume(TokenKind::OpenParen)?;
                     let expr = self.parse_expression(0)?;
@@ -183,9 +183,13 @@ where
                     })
                 }
                 TokenKind::Literal => self.parse_literal(),
-                _ => Err(ParserError::UnexpectedToken {
-                    token: self.peek_token(),
-                }),
+                _ => {
+                    let peeked_token = self.peek_token();
+                    Err(ParserError::UnexpectedToken {
+                        token: peeked_token,
+                        text: self.text(&peeked_token).to_owned(),
+                    })
+                }
             }
         };
 
@@ -196,12 +200,17 @@ where
                 TokenKind::Subtract => ast::Operator::Minus,
                 TokenKind::Multiply => ast::Operator::Multiply,
                 TokenKind::Divide => ast::Operator::Divide,
+                // these don't belong to us, leave it for someone else to consume
+                TokenKind::Comma => break,
+                TokenKind::OpenBrace => break,
                 TokenKind::CloseParen => break,
                 TokenKind::EndOfLine => break,
 
                 _ => {
+                    let peeked_token = self.peek_token();
                     return Err(ParserError::UnexpectedToken {
-                        token: self.peek_token(),
+                        token: peeked_token,
+                        text: self.text(&peeked_token).to_owned(),
                     });
                 }
             };
@@ -229,8 +238,9 @@ where
     }
 
     fn parse_expression_identifier(&mut self) -> Result<ast::Expression, ParserError> {
-        let name = self.consume(TokenKind::Identifier)?;
-        let expr = match self.text(&name) {
+        let token = self.consume(TokenKind::Identifier)?;
+
+        let expr = match self.text(&token) {
             // hmmmm
             "true" => Ok(ast::Expression::Literal(ast::Literal::Boolean(true))),
             "false" => Ok(ast::Expression::Literal(ast::Literal::Boolean(false))),
@@ -316,6 +326,7 @@ where
             let expr = self.parse_expression(0)?;
             args.push(expr);
 
+            // if no comma, should break and expect close paren
             if self.peek() == TokenKind::Comma {
                 self.consume(TokenKind::Comma)?;
             }
@@ -334,9 +345,13 @@ where
         match self.peek() {
             TokenKind::Identifier => self.parse_statement_identifier(),
             TokenKind::OpenBrace => self.parse_block(),
-            _ => Err(ParserError::UnexpectedToken {
-                token: self.peek_token(),
-            }),
+            _ => {
+                let peeked_token = self.peek_token();
+                return Err(ParserError::UnexpectedToken {
+                    token: peeked_token,
+                    text: self.text(&peeked_token).to_owned(),
+                });
+            }
         }
     }
 
@@ -365,7 +380,6 @@ where
 
         if *token.kind() != expected {
             return Err(ParserError::InvalidToken {
-                token,
                 expected,
                 actual: *token.kind(),
             });
@@ -675,5 +689,46 @@ fn new_function(arg1, arg2, arg3) {
                 )),
             ]
         );
+    }
+
+    #[test]
+    fn variable_and_operation() {
+        let input = r#"
+        fn test() {
+            let x = 1;
+            let y = x + 3;
+        }
+        "#
+        .to_owned();
+
+        let mut lexer = Lexer::new(&input);
+        let mut parser = Parser::new(&mut lexer, &input);
+        let program = parser.parse().unwrap();
+
+        assert_eq!(
+            program.statements,
+            vec![Statement::Function(Function::new(
+                "test".to_owned(),
+                vec![],
+                Statement::Block {
+                    body: vec![
+                        Statement::Let {
+                            name: "x".to_owned(),
+                            value: Expression::Literal(Literal::Integer(1)).into()
+                        },
+                        Statement::Let {
+                            name: "y".to_owned(),
+                            value: Expression::Infix {
+                                op: Operator::Plus,
+                                lhs: Expression::Variable("x".to_owned()).into(),
+                                rhs: Expression::Literal(Literal::Integer(3)).into()
+                            }
+                            .into()
+                        }
+                    ]
+                }
+                .into()
+            ))]
+        )
     }
 }

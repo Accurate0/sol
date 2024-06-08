@@ -64,7 +64,10 @@ fn main() -> Result<(), Box<dyn Error>> {
             let program = parser.parse()?;
             tracing::info!("{:#?}", program);
 
-            let compiler = Compiler::new(program);
+            let compiler = Compiler::new(&program);
+            let program = compiler.compile()?;
+
+            tracing::info!("{:#?}", program);
         }
     }
 

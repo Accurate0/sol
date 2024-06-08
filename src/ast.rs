@@ -93,6 +93,6 @@ pub enum Expression {
 }
 
 #[derive(Debug)]
-pub struct Program {
+pub struct ParsedProgram {
     pub statements: Vec<Statement>,
 }

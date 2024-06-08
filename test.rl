@@ -10,11 +10,14 @@ fn main(argv) {
     print("test");
     print(1.3);
 
+    print(wow);
 
     print(x, x);
     print(2);
 
     test();
+
+    let new_var = test;
 }
 
 fn test(){
@@ -29,6 +32,6 @@ fn test(){
 fn new_function(arg1, arg2, arg3) {
 {
 
-    test ();
+    test();
 }
 }
