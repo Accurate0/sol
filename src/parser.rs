@@ -696,6 +696,7 @@ fn new_function(arg1, arg2, arg3) {
         let input = r#"
         fn test() {
             let x = 1;
+            let z = 2 + x;
             let y = x + 3;
         }
         "#
@@ -715,6 +716,15 @@ fn new_function(arg1, arg2, arg3) {
                         Statement::Let {
                             name: "x".to_owned(),
                             value: Expression::Literal(Literal::Integer(1)).into()
+                        },
+                        Statement::Let {
+                            name: "z".to_owned(),
+                            value: Expression::Infix {
+                                op: Operator::Plus,
+                                lhs: Expression::Literal(Literal::Integer(2)).into(),
+                                rhs: Expression::Variable("x".to_owned()).into(),
+                            }
+                            .into()
                         },
                         Statement::Let {
                             name: "y".to_owned(),
