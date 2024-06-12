@@ -17,6 +17,7 @@ mod compiler;
 mod instructions;
 mod lexer;
 mod parser;
+mod vm;
 
 #[derive(clap::Parser, Debug)]
 #[command(version, about, long_about = None)]
@@ -62,7 +63,7 @@ fn main() -> Result<(), Box<dyn Error>> {
             let mut parser = Parser::new(&mut lexer, &buffer);
 
             let program = parser.parse()?;
-            tracing::info!("{:#?}", program);
+            // tracing::info!("{:#?}", program);
 
             let compiler = Compiler::new(&program);
             let program = compiler.compile()?;

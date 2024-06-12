@@ -25,8 +25,12 @@ pub enum ParserError {
         expected: TokenKind,
         actual: TokenKind,
     },
-    #[error("unexpected token: {0}, {1}", token, text)]
-    UnexpectedToken { token: Token, text: String },
+    #[error("unexpected token: {0}, {1} in function {2}", token, text, in_function)]
+    UnexpectedToken {
+        token: Token,
+        text: String,
+        in_function: &'static str,
+    },
     #[error("error parsing float: {0}")]
     ParseFloatError(#[from] ParseFloatError),
     #[error("error parsing integer: {0}")]
@@ -87,6 +91,7 @@ where
                     return Err(ParserError::UnexpectedToken {
                         token: peeked_token,
                         text: self.text(&peeked_token).to_owned(),
+                        in_function: stringify!(parse),
                     });
                 }
             };
@@ -126,7 +131,6 @@ where
         self.consume(TokenKind::Eq)?;
 
         let expression = self.parse_expression(0)?;
-
         self.consume(TokenKind::EndOfLine)?;
 
         Ok(ast::Statement::Let {
@@ -188,6 +192,7 @@ where
                     Err(ParserError::UnexpectedToken {
                         token: peeked_token,
                         text: self.text(&peeked_token).to_owned(),
+                        in_function: stringify!(parse_expression + lhs),
                     })
                 }
             }
@@ -204,6 +209,7 @@ where
                 TokenKind::Comma => break,
                 TokenKind::OpenBrace => break,
                 TokenKind::CloseParen => break,
+                TokenKind::CloseBrace => break,
                 TokenKind::EndOfLine => break,
 
                 _ => {
@@ -211,6 +217,7 @@ where
                     return Err(ParserError::UnexpectedToken {
                         token: peeked_token,
                         text: self.text(&peeked_token).to_owned(),
+                        in_function: stringify!(parse_expression + rhs),
                     });
                 }
             };
@@ -244,7 +251,7 @@ where
             // hmmmm
             "true" => Ok(ast::Expression::Literal(ast::Literal::Boolean(true))),
             "false" => Ok(ast::Expression::Literal(ast::Literal::Boolean(false))),
-            name if self.peek() == TokenKind::OpenParen => self.parse_function_call(name),
+            name if self.peek() == TokenKind::OpenParen => self.parse_function_call(name, false),
             name => self.parse_variable(name),
         }?;
 
@@ -258,9 +265,9 @@ where
             "const" => self.parse_const(),
             "fn" => Ok(ast::Statement::Function(self.parse_function()?)),
             "if" => self.parse_if_statement(),
-            name if self.peek() == TokenKind::OpenParen => {
-                Ok(ast::Statement::Expression(self.parse_function_call(name)?))
-            }
+            name if self.peek() == TokenKind::OpenParen => Ok(ast::Statement::Expression(
+                self.parse_function_call(name, true)?,
+            )),
             name => Ok(ast::Statement::Expression(self.parse_variable(name)?)),
         }
     }
@@ -313,7 +320,11 @@ where
         Ok(ast::Expression::Variable(name.to_owned()))
     }
 
-    fn parse_function_call(&mut self, name: &str) -> Result<ast::Expression, ParserError> {
+    fn parse_function_call(
+        &mut self,
+        name: &str,
+        is_statement: bool,
+    ) -> Result<ast::Expression, ParserError> {
         self.consume(TokenKind::OpenParen)?;
 
         let mut args = Vec::new();
@@ -333,7 +344,12 @@ where
         }
 
         self.consume(TokenKind::CloseParen)?;
-        self.consume(TokenKind::EndOfLine)?;
+
+        // if we parsed as part of a full statement, then it should have end of line
+        // but if it was something like an expression, there is probably more
+        if is_statement {
+            self.consume(TokenKind::EndOfLine)?;
+        }
 
         Ok(ast::Expression::FunctionCall {
             name: name.to_owned(),
@@ -350,6 +366,7 @@ where
                 return Err(ParserError::UnexpectedToken {
                     token: peeked_token,
                     text: self.text(&peeked_token).to_owned(),
+                    in_function: stringify!(parse_statement),
                 });
             }
         }
@@ -689,6 +706,99 @@ fn new_function(arg1, arg2, arg3) {
                 )),
             ]
         );
+    }
+
+    #[test]
+    fn function_call_return() {
+        let input = r#"
+        fn test() {
+            let x = test2();
+        }
+
+        fn test2() {
+
+        }
+        "#
+        .to_owned();
+
+        let mut lexer = Lexer::new(&input);
+        let mut parser = Parser::new(&mut lexer, &input);
+        let program = parser.parse().unwrap();
+
+        assert_eq!(
+            program.statements,
+            vec![
+                Statement::Function(Function::new(
+                    "test".to_owned(),
+                    vec![],
+                    Statement::Block {
+                        body: vec![Statement::Let {
+                            name: "x".to_owned(),
+                            value: Expression::FunctionCall {
+                                name: "test2".to_owned(),
+                                args: vec![]
+                            }
+                            .into()
+                        },]
+                    }
+                    .into()
+                )),
+                Statement::Function(Function::new(
+                    "test2".to_owned(),
+                    vec![],
+                    Statement::Block { body: vec![] }.into()
+                ))
+            ]
+        )
+    }
+
+    #[test]
+    fn function_call_with_addition() {
+        let input = r#"
+        fn test() {
+            let x = test2() + 1;
+        }
+
+        fn test2() {
+
+        }
+        "#
+        .to_owned();
+
+        let mut lexer = Lexer::new(&input);
+        let mut parser = Parser::new(&mut lexer, &input);
+        let program = parser.parse().unwrap();
+
+        assert_eq!(
+            program.statements,
+            vec![
+                Statement::Function(Function::new(
+                    "test".to_owned(),
+                    vec![],
+                    Statement::Block {
+                        body: vec![Statement::Let {
+                            name: "x".to_owned(),
+                            value: Expression::Infix {
+                                op: Operator::Plus,
+                                lhs: Expression::FunctionCall {
+                                    name: "test2".to_owned(),
+                                    args: vec![]
+                                }
+                                .into(),
+                                rhs: Expression::Literal(Literal::Integer(1)).into()
+                            }
+                            .into()
+                        },]
+                    }
+                    .into()
+                )),
+                Statement::Function(Function::new(
+                    "test2".to_owned(),
+                    vec![],
+                    Statement::Block { body: vec![] }.into()
+                ))
+            ]
+        )
     }
 
     #[test]

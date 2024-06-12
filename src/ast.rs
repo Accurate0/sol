@@ -2,7 +2,7 @@
 pub struct Function {
     name: String,
     parameters: Vec<String>,
-    body: Box<Statement>,
+    pub body: Box<Statement>,
 }
 
 impl Function {

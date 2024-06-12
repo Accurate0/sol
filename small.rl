@@ -1,14 +1,13 @@
 const constant_value = 3;
 
 fn main(argv) {
+    let x = 1.3 + x;
     print("Hello");
-    test();
+    let y = test();
 }
 
 fn test() {
-    let x = 1.3;
     print(x);
-    print(x + 3);
     print(constant_value);
 }
 
