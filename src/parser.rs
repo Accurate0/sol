@@ -1,5 +1,5 @@
 use crate::{
-    ast::{self},
+    ast::{self, Statement},
     lexer::{Span, Token, TokenKind},
 };
 use std::{
@@ -65,39 +65,6 @@ where
             .tokens
             .peek()
             .unwrap_or(&Token::new(TokenKind::EndOfFile, Span { start: 0, end: 0 }))
-    }
-
-    pub fn parse(&mut self) -> Result<ast::ParsedProgram, ParserError> {
-        let mut program = ast::ParsedProgram {
-            statements: Vec::default(),
-        };
-
-        loop {
-            let token = self.peek();
-            if token == TokenKind::EndOfFile {
-                break;
-            }
-
-            match self.peek() {
-                TokenKind::Identifier => {
-                    let statement = self.parse_statement_identifier()?;
-                    program.statements.push(statement);
-                }
-                TokenKind::EndOfLine => {
-                    self.consume(TokenKind::EndOfLine)?;
-                }
-                _ => {
-                    let peeked_token = self.peek_token();
-                    return Err(ParserError::UnexpectedToken {
-                        token: peeked_token,
-                        text: self.text(&peeked_token).to_owned(),
-                        in_function: stringify!(parse),
-                    });
-                }
-            };
-        }
-
-        Ok(program)
     }
 
     fn parse_const(&mut self) -> Result<ast::Statement, ParserError> {
@@ -359,6 +326,12 @@ where
 
     fn parse_statement(&mut self) -> Result<ast::Statement, ParserError> {
         match self.peek() {
+            TokenKind::Literal => {
+                let expr = ast::Statement::Expression(self.parse_expression(0)?);
+                self.consume(TokenKind::EndOfLine)?;
+
+                Ok(expr)
+            }
             TokenKind::Identifier => self.parse_statement_identifier(),
             TokenKind::OpenBrace => self.parse_block(),
             _ => {
@@ -404,15 +377,8 @@ where
 
         Ok(token)
     }
-}
 
-impl<'a, I> Iterator for Parser<'a, I>
-where
-    I: Iterator<Item = Token>,
-{
-    type Item = Token;
-
-    fn next(&mut self) -> Option<Self::Item> {
+    fn next(&mut self) -> Option<Token> {
         let token = self.tokens.next();
 
         // tracing::info!("{:?}", token);
@@ -425,6 +391,53 @@ where
             let token = token.unwrap();
             // tracing::info!("{}", self.text(&token));
             Some(token)
+        }
+    }
+}
+
+impl<'a, I> Iterator for Parser<'a, I>
+where
+    I: Iterator<Item = Token>,
+{
+    type Item = Statement;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let token = self.peek();
+        if token == TokenKind::EndOfFile {
+            return None;
+        }
+
+        match self.peek() {
+            TokenKind::Identifier => {
+                let statement = self.parse_statement_identifier();
+                match statement {
+                    Ok(s) => return Some(s),
+                    Err(e) => {
+                        tracing::error!("{e}");
+                        return None;
+                    }
+                }
+            }
+            TokenKind::EndOfLine => {
+                let token = self.consume(TokenKind::EndOfLine);
+                match token {
+                    Ok(_) => return None,
+                    Err(e) => {
+                        tracing::error!("{e}");
+                        return None;
+                    }
+                }
+            }
+            _ => {
+                let peeked_token = self.peek_token();
+                let e = ParserError::UnexpectedToken {
+                    token: peeked_token,
+                    text: self.text(&peeked_token).to_owned(),
+                    in_function: stringify!(parse),
+                };
+                tracing::error!("{e}");
+                None
+            }
         }
     }
 }
@@ -749,6 +762,37 @@ fn new_function(arg1, arg2, arg3) {
                     Statement::Block { body: vec![] }.into()
                 ))
             ]
+        )
+    }
+
+    // ..? maybe illegal
+    #[test]
+    fn useless_expression() {
+        let input = r#"
+        fn test() {
+            2 + 2.3;
+        }
+        "#
+        .to_owned();
+
+        let mut lexer = Lexer::new(&input);
+        let mut parser = Parser::new(&mut lexer, &input);
+        let program = parser.parse().unwrap();
+
+        assert_eq!(
+            program.statements,
+            vec![Statement::Function(Function::new(
+                "test".to_owned(),
+                vec![],
+                Statement::Block {
+                    body: vec![Statement::Expression(Expression::Infix {
+                        op: Operator::Plus,
+                        lhs: Expression::Literal(Literal::Integer(2)).into(),
+                        rhs: Expression::Literal(Literal::Float(2.3)).into(),
+                    })]
+                }
+                .into()
+            )),]
         )
     }
 

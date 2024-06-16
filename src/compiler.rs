@@ -1,6 +1,8 @@
 use crate::{
     ast::{self, Expression, Statement},
     instructions::Instruction,
+    lexer::Lexer,
+    parser::Parser,
     vm::Register,
 };
 use std::cell::RefCell;
@@ -24,27 +26,42 @@ pub enum Value {
 
 pub struct Compiler<'a> {
     // FIXME: get iterator instead
-    program: &'a ast::ParsedProgram,
+    parser: &'a mut Parser<'a, &'a mut Lexer<'a>>,
     first_available_register: RefCell<Register>,
 }
 
+// we know all the registers that are required as args in order
+// we can copy them to the function new's frame containing its registers
+// and it can access them from there, first available register will be + n
+// we can store the details of the args -> register mapping at compile time
+// to ensure the right register is accessed
+// where n is number of args
+// return register can be 0 always for all values
+// when a function call ends we'll copy its register 0 to the variable or whatever
+// it was assigned to
+// let x = function_call(arg1, arg2);
+// function call's registers/stack -> [return_value, arg1, arg2]
+// our stack had [arg2, arg1] in random spots that we copied over
+// and we'll copy to next register from reg0 of function call
+// and then SetVariable x next_available
+
 impl<'a> Compiler<'a> {
-    pub fn new(program: &'a ast::ParsedProgram) -> Self {
+    pub fn new(parser: &'a mut Parser<'a, &'a mut Lexer<'a>>) -> Self {
         Self {
-            program,
+            parser,
             first_available_register: RefCell::new(0),
         }
     }
 
-    pub fn compile(&self) -> Result<CompiledProgram, CompilerError> {
-        for statement in &self.program.statements {
-            self.compile_statement(statement);
+    pub fn compile(&mut self) -> Result<CompiledProgram, CompilerError> {
+        while let Some(statement) = self.parser.next() {
+            self.compile_statement(&statement);
         }
 
         Ok(CompiledProgram {})
     }
 
-    fn compile_const(&self, name: &String, value: &Expression) {
+    fn compile_const(&self, name: &str, value: &Expression) {
         match value {
             Expression::Literal(lit) => {
                 let value = match lit {

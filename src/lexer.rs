@@ -67,9 +67,11 @@ impl fmt::Debug for Token {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
-            // "{:?} - <{}, {}>",
-            "Token::new(TokenKind::{:?}, Span {{ start: {}, end: {} }})",
-            self.kind, self.span.start, self.span.end
+            "{:?} - <{}, {}>",
+            // "Token::new(TokenKind::{:?}, Span {{ start: {}, end: {} }})",
+            self.kind,
+            self.span.start,
+            self.span.end
         )
     }
 }

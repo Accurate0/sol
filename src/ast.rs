@@ -91,8 +91,3 @@ pub enum Expression {
         args: Vec<Expression>,
     },
 }
-
-#[derive(Debug)]
-pub struct ParsedProgram {
-    pub statements: Vec<Statement>,
-}

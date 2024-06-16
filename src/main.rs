@@ -62,10 +62,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
             let mut parser = Parser::new(&mut lexer, &buffer);
 
-            let program = parser.parse()?;
-            // tracing::info!("{:#?}", program);
-
-            let compiler = Compiler::new(&program);
+            let mut compiler = Compiler::new(&mut parser);
             let program = compiler.compile()?;
 
             tracing::info!("{:#?}", program);
