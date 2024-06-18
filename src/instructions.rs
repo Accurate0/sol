@@ -1,32 +1,51 @@
-use crate::{compiler::Value, vm::Register};
+pub type Register = u8;
+pub type LiteralId = u16;
+pub type FunctionId = u16;
 
-// #[repr(u8)]
 // FIXME MAKE IT ACTUAL BYTECODE
 #[derive(Debug)]
 pub enum Instruction {
-    GetVariable {
+    LoadFunction {
         dest: Register,
-        src: String,
+        src: FunctionId,
     },
-    Load {
-        dest: Register,
-        value: Value,
-    },
-    SetVariable {
+    CallFunction {
         src: Register,
-        dest: String,
     },
-    GetConstant {
+    LoadLiteral {
         dest: Register,
-        src: String,
+        src: LiteralId,
     },
     Add {
         dest: Register,
         lhs: Register,
         rhs: Register,
     },
-    FunctionCall {
-        name: String,
-        args: Vec<Register>,
+    Sub {
+        dest: Register,
+        lhs: Register,
+        rhs: Register,
     },
+    Mul {
+        dest: Register,
+        lhs: Register,
+        rhs: Register,
+    },
+    Div {
+        dest: Register,
+        lhs: Register,
+        rhs: Register,
+    },
+}
+
+#[cfg(test)]
+mod test {
+    use super::Instruction;
+    use pretty_assertions::assert_eq;
+    use std::mem::size_of;
+
+    #[test]
+    fn test_instruction_is_32_bits() {
+        assert_eq!(size_of::<Instruction>(), 4);
+    }
 }

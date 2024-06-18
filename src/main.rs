@@ -17,6 +17,7 @@ mod compiler;
 mod instructions;
 mod lexer;
 mod parser;
+mod scope;
 mod vm;
 
 #[derive(clap::Parser, Debug)]
@@ -59,10 +60,9 @@ fn main() -> Result<(), Box<dyn Error>> {
 
             file.read_to_string(&mut buffer)?;
             let mut lexer = Lexer::new(&buffer);
-
             let mut parser = Parser::new(&mut lexer, &buffer);
-
             let mut compiler = Compiler::new(&mut parser);
+
             let program = compiler.compile()?;
 
             tracing::info!("{:#?}", program);

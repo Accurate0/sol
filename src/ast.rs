@@ -1,7 +1,7 @@
 #[derive(Debug, PartialEq)]
 pub struct Function {
-    name: String,
-    parameters: Vec<String>,
+    pub name: String,
+    pub parameters: Vec<String>,
     pub body: Box<Statement>,
 }
 
@@ -15,7 +15,7 @@ impl Function {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum Literal {
     String(String),
     Float(f64),

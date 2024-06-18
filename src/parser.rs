@@ -25,7 +25,12 @@ pub enum ParserError {
         expected: TokenKind,
         actual: TokenKind,
     },
-    #[error("unexpected token: {0}, {1} in function {2}", token, text, in_function)]
+    #[error(
+        "unexpected token: {0:?}, {1} in function {2}",
+        token,
+        text,
+        in_function
+    )]
     UnexpectedToken {
         token: Token,
         text: String,
@@ -61,10 +66,14 @@ where
     }
 
     fn peek_token(&mut self) -> Token {
-        *self
-            .tokens
-            .peek()
-            .unwrap_or(&Token::new(TokenKind::EndOfFile, Span { start: 0, end: 0 }))
+        *self.tokens.peek().unwrap_or(&Token::new(
+            TokenKind::EndOfFile,
+            Span {
+                start: 0,
+                end: 0,
+                line: 0,
+            },
+        ))
     }
 
     fn parse_const(&mut self) -> Result<ast::Statement, ParserError> {
@@ -411,22 +420,20 @@ where
             TokenKind::Identifier => {
                 let statement = self.parse_statement_identifier();
                 match statement {
-                    Ok(s) => return Some(s),
+                    Ok(s) => Some(s),
                     Err(e) => {
                         tracing::error!("{e}");
-                        return None;
+                        None
                     }
                 }
             }
             TokenKind::EndOfLine => {
                 let token = self.consume(TokenKind::EndOfLine);
-                match token {
-                    Ok(_) => return None,
-                    Err(e) => {
-                        tracing::error!("{e}");
-                        return None;
-                    }
+                if let Err(e) = token {
+                    tracing::error!("{e}");
                 }
+
+                None
             }
             _ => {
                 let peeked_token = self.peek_token();
@@ -435,6 +442,7 @@ where
                     text: self.text(&peeked_token).to_owned(),
                     in_function: stringify!(parse),
                 };
+
                 tracing::error!("{e}");
                 None
             }
@@ -458,11 +466,11 @@ mod tests {
         .to_owned();
 
         let mut lexer = Lexer::new(&input);
-        let mut parser = Parser::new(&mut lexer, &input);
-        let program = parser.parse().unwrap();
+        let parser = Parser::new(&mut lexer, &input);
+        let statements = parser.collect::<Vec<_>>();
 
         assert_eq!(
-            program.statements,
+            statements,
             vec![
                 Statement::Const {
                     name: "wow".to_owned(),
@@ -513,11 +521,11 @@ fn new_function(arg1, arg2, arg3) {
         .to_owned();
 
         let mut lexer = Lexer::new(&input);
-        let mut parser = Parser::new(&mut lexer, &input);
-        let program = parser.parse().unwrap();
+        let parser = Parser::new(&mut lexer, &input);
+        let statements = parser.collect::<Vec<_>>();
 
         assert_eq!(
-            program.statements,
+            statements,
             vec![
                 Statement::Const {
                     name: "wow".to_owned(),
@@ -607,11 +615,11 @@ fn new_function(arg1, arg2, arg3) {
         .to_owned();
 
         let mut lexer = Lexer::new(&input);
-        let mut parser = Parser::new(&mut lexer, &input);
-        let program = parser.parse().unwrap();
+        let parser = Parser::new(&mut lexer, &input);
+        let statements = parser.collect::<Vec<_>>();
 
         assert_eq!(
-            program.statements,
+            statements,
             vec![Statement::Function(Function::new(
                 "test".to_owned(),
                 vec![],
@@ -656,11 +664,11 @@ fn new_function(arg1, arg2, arg3) {
         .to_owned();
 
         let mut lexer = Lexer::new(&input);
-        let mut parser = Parser::new(&mut lexer, &input);
-        let program = parser.parse().unwrap();
+        let parser = Parser::new(&mut lexer, &input);
+        let statements = parser.collect::<Vec<_>>();
 
         assert_eq!(
-            program.statements,
+            statements,
             vec![Statement::Function(Function::new(
                 "test".to_owned(),
                 vec![],
@@ -696,11 +704,12 @@ fn new_function(arg1, arg2, arg3) {
         .to_owned();
 
         let mut lexer = Lexer::new(&input);
-        let mut parser = Parser::new(&mut lexer, &input);
-        let program = parser.parse().unwrap();
+        let parser = Parser::new(&mut lexer, &input);
+
+        let statements = parser.collect::<Vec<_>>();
 
         assert_eq!(
-            program.statements,
+            statements,
             vec![
                 Statement::Const {
                     name: "wow".to_owned(),
@@ -735,11 +744,11 @@ fn new_function(arg1, arg2, arg3) {
         .to_owned();
 
         let mut lexer = Lexer::new(&input);
-        let mut parser = Parser::new(&mut lexer, &input);
-        let program = parser.parse().unwrap();
+        let parser = Parser::new(&mut lexer, &input);
+        let statements = parser.collect::<Vec<_>>();
 
         assert_eq!(
-            program.statements,
+            statements,
             vec![
                 Statement::Function(Function::new(
                     "test".to_owned(),
@@ -776,11 +785,12 @@ fn new_function(arg1, arg2, arg3) {
         .to_owned();
 
         let mut lexer = Lexer::new(&input);
-        let mut parser = Parser::new(&mut lexer, &input);
-        let program = parser.parse().unwrap();
+        let parser = Parser::new(&mut lexer, &input);
+
+        let statements = parser.collect::<Vec<_>>();
 
         assert_eq!(
-            program.statements,
+            statements,
             vec![Statement::Function(Function::new(
                 "test".to_owned(),
                 vec![],
@@ -810,11 +820,11 @@ fn new_function(arg1, arg2, arg3) {
         .to_owned();
 
         let mut lexer = Lexer::new(&input);
-        let mut parser = Parser::new(&mut lexer, &input);
-        let program = parser.parse().unwrap();
+        let parser = Parser::new(&mut lexer, &input);
+        let statements = parser.collect::<Vec<_>>();
 
         assert_eq!(
-            program.statements,
+            statements,
             vec![
                 Statement::Function(Function::new(
                     "test".to_owned(),
@@ -852,16 +862,17 @@ fn new_function(arg1, arg2, arg3) {
             let x = 1;
             let z = 2 + x;
             let y = x + 3;
+            let r = x + z;
         }
         "#
         .to_owned();
 
         let mut lexer = Lexer::new(&input);
-        let mut parser = Parser::new(&mut lexer, &input);
-        let program = parser.parse().unwrap();
+        let parser = Parser::new(&mut lexer, &input);
+        let statements = parser.collect::<Vec<_>>();
 
         assert_eq!(
-            program.statements,
+            statements,
             vec![Statement::Function(Function::new(
                 "test".to_owned(),
                 vec![],
@@ -886,6 +897,15 @@ fn new_function(arg1, arg2, arg3) {
                                 op: Operator::Plus,
                                 lhs: Expression::Variable("x".to_owned()).into(),
                                 rhs: Expression::Literal(Literal::Integer(3)).into()
+                            }
+                            .into()
+                        },
+                        Statement::Let {
+                            name: "r".to_owned(),
+                            value: Expression::Infix {
+                                op: Operator::Plus,
+                                lhs: Expression::Variable("x".to_owned()).into(),
+                                rhs: Expression::Variable("z".to_owned()).into(),
                             }
                             .into()
                         }

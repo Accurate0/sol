@@ -1,11 +1,10 @@
+use std::{cell::RefCell, rc::Rc};
+
 use crate::{
-    ast::{self, Expression, Statement},
-    instructions::Instruction,
-    lexer::Lexer,
-    parser::Parser,
-    vm::Register,
+    ast::{self, Literal, Statement},
+    instructions::{FunctionId, Instruction, LiteralId, Register},
+    scope::{Scope, ScopeType},
 };
-use std::cell::RefCell;
 use thiserror::Error;
 
 #[derive(Debug, Error)]
@@ -14,20 +13,275 @@ pub enum CompilerError {}
 #[derive(Default, Debug)]
 pub struct CompiledProgram {}
 
-#[derive(Default, Debug, Clone)]
-pub enum Value {
-    #[default]
-    Nil,
-    String(String),
-    Float(f64),
-    Integer(i64),
-    Boolean(bool),
+#[derive(Debug)]
+enum Function {
+    Defined {
+        name: String,
+        code: Vec<Instruction>,
+    },
+    Undefined {
+        name: String,
+    },
 }
 
-pub struct Compiler<'a> {
-    // FIXME: get iterator instead
-    parser: &'a mut Parser<'a, &'a mut Lexer<'a>>,
-    first_available_register: RefCell<Register>,
+#[derive(Debug)]
+pub struct Compiler<I>
+where
+    I: Iterator<Item = Statement>,
+{
+    parser: I,
+    scope_stack: Vec<Scope>,
+    next_available_register: Register,
+    functions: Vec<Function>,
+    literals: Vec<Literal>,
+    global_code: Rc<RefCell<Vec<Instruction>>>,
+    current_code: Rc<RefCell<Vec<Instruction>>>,
+}
+
+impl<I> Compiler<I>
+where
+    I: Iterator<Item = Statement>,
+{
+    // wtf
+    pub fn new(parser: I) -> Self {
+        let global_code = Rc::new(Vec::new().into());
+        Self {
+            parser,
+            scope_stack: vec![Scope::new(ScopeType::Global)],
+            literals: vec![],
+            next_available_register: 1,
+            functions: Default::default(),
+            global_code: Rc::clone(&global_code),
+            current_code: global_code,
+        }
+    }
+
+    pub fn compile(&mut self) -> Result<CompiledProgram, CompilerError> {
+        while let Some(statement) = self.parser.next() {
+            self.compile_statement(&statement);
+        }
+
+        dbg!(&self.literals);
+        dbg!(&self.functions);
+        dbg!(&self.global_code);
+
+        Ok(CompiledProgram {})
+    }
+
+    #[allow(dead_code)]
+    fn add_scope(&mut self) {
+        self.scope_stack.push(Scope::new(ScopeType::Local));
+    }
+
+    fn add_function_scope(&mut self) {
+        self.scope_stack.push(Scope::new(ScopeType::Function));
+    }
+
+    fn define_current_scope(&mut self, name: &str, register: Register) {
+        let current_scope = self.scope_stack.last_mut().unwrap();
+        current_scope.define(name, register);
+    }
+
+    fn resolve(&mut self, name: &str) -> Register {
+        let scope_stack = &mut self.scope_stack.iter().rev();
+        for v in scope_stack {
+            if let Some(reg) = v.contains(name) {
+                // FIXME: don't pass function boundary
+                return reg;
+            }
+        }
+
+        unreachable!()
+    }
+
+    fn remove_scope(&mut self) {
+        self.scope_stack.pop();
+    }
+
+    fn get_register(&mut self) -> Register {
+        let reg = self.next_available_register;
+        self.next_available_register += 1;
+        reg
+    }
+
+    fn compile_function(&mut self, func: &ast::Function) {
+        let prev_register_count = self.next_available_register;
+        self.next_available_register = 1;
+
+        self.add_function_scope();
+        let prev_code = self.current_code.replace(Vec::new());
+
+        for arg in &func.parameters {
+            self.define_current_scope(arg, self.next_available_register);
+            self.next_available_register += 1;
+        }
+
+        match *func.body {
+            Statement::Block { ref body } => {
+                for statement in body {
+                    self.compile_statement(statement);
+                }
+            }
+            _ => unreachable!(),
+        }
+
+        let function_code = self.current_code.replace(prev_code);
+
+        let functions = self.functions.iter_mut().rev();
+        let mut found_existing_function = None;
+        for f in functions {
+            match f {
+                Function::Undefined { name } if *name == func.name => {
+                    found_existing_function = Some(f)
+                }
+                Function::Defined { .. } => continue,
+                Function::Undefined { .. } => continue,
+            }
+        }
+
+        if let Some(f) = found_existing_function {
+            *f = Function::Defined {
+                name: func.name.to_owned(),
+                code: function_code,
+            }
+        } else {
+            self.functions.push(Function::Defined {
+                name: func.name.to_owned(),
+                code: function_code,
+            });
+        }
+
+        self.remove_scope();
+        self.next_available_register = prev_register_count;
+    }
+
+    fn compile_let(&mut self, name: &str, value: &ast::Expression) {
+        let expression_value_register = self.compile_expression(value);
+        self.define_current_scope(name, expression_value_register);
+    }
+
+    #[allow(unused)]
+    fn compile_expression(&mut self, expr: &ast::Expression) -> Register {
+        // FIXME: potentially wasting registers
+        match expr {
+            ast::Expression::Prefix { op, expr } => todo!(),
+            ast::Expression::Infix { op, lhs, rhs } => {
+                let lhs = self.compile_expression(lhs);
+                let rhs = self.compile_expression(rhs);
+
+                let dest = self.get_register();
+
+                let instruction = match op {
+                    ast::Operator::Plus => Instruction::Add { dest, lhs, rhs },
+                    ast::Operator::Minus => Instruction::Sub { dest, lhs, rhs },
+                    ast::Operator::Divide => Instruction::Div { dest, lhs, rhs },
+                    ast::Operator::Multiply => Instruction::Mul { dest, lhs, rhs },
+                    _ => unreachable!(),
+                };
+
+                self.current_code.borrow_mut().push(instruction);
+
+                dest
+            }
+            ast::Expression::Literal(lit) => {
+                let reg = self.get_register();
+                let mut literal_list = self.literals.iter().rev().enumerate();
+                let mut found_existing_literal = None;
+                let mut found_id = None;
+                for (index, literal) in literal_list {
+                    if literal == lit {
+                        found_id = Some(index as LiteralId);
+                        found_existing_literal = Some(literal);
+                        break;
+                    }
+                }
+
+                let literal_id = if let Some(existing_literal) = found_existing_literal {
+                    found_id.unwrap()
+                } else {
+                    // FIXME:
+                    self.literals.push(lit.clone());
+                    // FIXME:
+                    (self.literals.len() - 1) as LiteralId
+                };
+
+                let instruction = Instruction::LoadLiteral {
+                    dest: reg,
+                    src: literal_id,
+                };
+
+                self.current_code.borrow_mut().push(instruction);
+
+                reg
+            }
+            ast::Expression::Variable(name) => self.resolve(name),
+            ast::Expression::FunctionCall {
+                name: function_to_call,
+                args,
+            } => {
+                let mut function_list = self.functions.iter().rev().enumerate();
+                let mut found_id = None;
+                for (index, function) in function_list {
+                    match function {
+                        Function::Defined { name, code } if function_to_call == name => {
+                            found_id = Some(index);
+                        }
+                        Function::Defined { name, code } => continue,
+                        Function::Undefined { name } if function_to_call == name => {
+                            found_id = Some(index)
+                        }
+                        Function::Undefined { name } => continue,
+                    }
+                }
+
+                let found_id = match found_id {
+                    Some(f) => f as FunctionId,
+                    None => {
+                        self.functions.push(Function::Undefined {
+                            name: function_to_call.to_owned(),
+                        });
+                        (self.functions.len() - 1) as FunctionId
+                    }
+                };
+
+                let reg = self.get_register();
+                let instruction = Instruction::LoadFunction {
+                    dest: reg,
+                    src: found_id,
+                };
+
+                self.current_code.borrow_mut().push(instruction);
+
+                let instruction = Instruction::CallFunction { src: reg };
+
+                self.current_code.borrow_mut().push(instruction);
+
+                reg
+            }
+        }
+    }
+
+    #[allow(unused)]
+    pub fn compile_statement(&mut self, statement: &Statement) {
+        match statement {
+            Statement::Const { name, value } => todo!(),
+            Statement::Let { name, value } => self.compile_let(name, value),
+            Statement::If {
+                condition,
+                body,
+                else_statement,
+            } => todo!(),
+            Statement::Block { body } => {
+                for statement in body {
+                    self.compile_statement(statement)
+                }
+            }
+            Statement::Function(func) => self.compile_function(func),
+            Statement::Expression(expr) => {
+                self.compile_expression(expr);
+            }
+        }
+    }
 }
 
 // we know all the registers that are required as args in order
@@ -44,153 +298,3 @@ pub struct Compiler<'a> {
 // our stack had [arg2, arg1] in random spots that we copied over
 // and we'll copy to next register from reg0 of function call
 // and then SetVariable x next_available
-
-impl<'a> Compiler<'a> {
-    pub fn new(parser: &'a mut Parser<'a, &'a mut Lexer<'a>>) -> Self {
-        Self {
-            parser,
-            first_available_register: RefCell::new(0),
-        }
-    }
-
-    pub fn compile(&mut self) -> Result<CompiledProgram, CompilerError> {
-        while let Some(statement) = self.parser.next() {
-            self.compile_statement(&statement);
-        }
-
-        Ok(CompiledProgram {})
-    }
-
-    fn compile_const(&self, name: &str, value: &Expression) {
-        match value {
-            Expression::Literal(lit) => {
-                let value = match lit {
-                    ast::Literal::String(s) => Value::String(s.to_owned()),
-                    ast::Literal::Float(f) => Value::Float(*f),
-                    ast::Literal::Integer(i) => Value::Integer(*i),
-                    ast::Literal::Boolean(b) => Value::Boolean(*b),
-                };
-            }
-            _ => unreachable!(),
-        }
-    }
-
-    fn get_register(&self) -> Register {
-        // let mut current_block = self.current_block.borrow_mut();
-        // let reg = current_block.first_available_register;
-        //
-        // current_block.first_available_register += 1;
-        let mut first_available_register = self.first_available_register.borrow_mut();
-        let reg = *first_available_register;
-        *first_available_register += 1;
-
-        reg
-    }
-
-    fn compile_expression(&self, expression: &Expression) -> Register {
-        match expression {
-            Expression::Prefix { op, expr } => todo!(),
-            Expression::FunctionCall { name, args } => {
-                let registers = args
-                    .iter()
-                    .map(|e| self.compile_expression(e))
-                    .collect::<Vec<_>>();
-
-                let instruction = Instruction::FunctionCall {
-                    name: name.to_owned(),
-                    args: registers,
-                };
-
-                println!("{:?}", instruction);
-
-                // need a calling convention, special register?
-                99
-            }
-            Expression::Infix { op, lhs, rhs } => match op {
-                ast::Operator::Plus => {
-                    let dest = self.get_register();
-                    let lhs = self.compile_expression(lhs);
-                    let rhs = self.compile_expression(rhs);
-
-                    let instruction = Instruction::Add { dest, lhs, rhs };
-                    println!("{:?}", instruction);
-
-                    dest
-                }
-                ast::Operator::Minus => todo!(),
-                ast::Operator::Multiply => todo!(),
-                ast::Operator::Not => todo!(),
-                ast::Operator::Divide => todo!(),
-            },
-            Expression::Literal(lit) => {
-                let dest = self.get_register();
-                let instruction = Instruction::Load {
-                    dest,
-                    value: match lit {
-                        ast::Literal::String(s) => Value::String(s.to_owned()),
-                        ast::Literal::Float(f) => Value::Float(*f),
-                        ast::Literal::Integer(i) => Value::Integer(*i),
-                        ast::Literal::Boolean(b) => Value::Boolean(*b),
-                    },
-                };
-
-                println!("{:?}", instruction);
-                dest
-            }
-            Expression::Variable(name) => {
-                let dest = self.get_register();
-                let instruction = Instruction::GetVariable {
-                    dest,
-                    src: name.to_owned(),
-                };
-
-                println!("{:?}", instruction);
-                dest
-            }
-        }
-    }
-
-    fn compile_let(&self, name: &String, expression: &Expression) {
-        let rhs = self.compile_expression(expression);
-
-        let instruction = Instruction::SetVariable {
-            src: rhs,
-            dest: name.to_owned(),
-        };
-
-        println!("{:?}", instruction);
-    }
-
-    fn compile_block(&self, statements: &Vec<Statement>) {
-        // scope change
-        for statement in statements {
-            self.compile_statement(statement);
-        }
-    }
-
-    fn compile_function(&self, function: &ast::Function) {
-        // new scope
-
-        match *function.body {
-            Statement::Block { ref body } => self.compile_block(body),
-            _ => unreachable!(),
-        }
-    }
-
-    pub fn compile_statement(&self, statement: &Statement) {
-        match statement {
-            Statement::Const { name, value } => self.compile_const(name, value),
-            Statement::Let { name, value } => self.compile_let(name, value),
-            Statement::Block { body } => self.compile_block(body),
-            Statement::If {
-                condition,
-                body,
-                else_statement,
-            } => todo!(),
-            Statement::Function(f) => self.compile_function(f),
-            Statement::Expression(e) => {
-                self.compile_expression(e);
-            }
-        }
-    }
-}
