@@ -15,14 +15,14 @@ pub enum CompilerError {
     VariableNotFound { variable: String },
 }
 
-#[derive(Default, Debug)]
+#[derive(Default, Debug, PartialEq)]
 pub struct CompiledProgram {
     pub functions: Vec<Function>,
     pub global_code: Vec<Instruction>,
     pub literals: Vec<Literal>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum Function {
     Defined {
         name: String,
@@ -304,17 +304,127 @@ where
     }
 }
 
-// we know all the registers that are required as args in order
-// we can copy them to the function new's frame containing its registers
-// and it can access them from there, first available register will be + n
-// we can store the details of the args -> register mapping at compile time
-// to ensure the right register is accessed
-// where n is number of args
-// return register can be 0 always for all values
-// when a function call ends we'll copy its register 0 to the variable or whatever
-// it was assigned to
-// let x = function_call(arg1, arg2);
-// function call's registers/stack -> [return_value, arg1, arg2]
-// our stack had [arg2, arg1] in random spots that we copied over
-// and we'll copy to next register from reg0 of function call
-// and then SetVariable x next_available
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::lexer::*;
+    use crate::parser::*;
+    use pretty_assertions::assert_eq;
+
+    #[test]
+    fn small_input() {
+        let input = r#"
+let x = 3;
+let y = 4;
+let z = x + y;
+
+fn print() {}
+
+fn test(a) {
+    let y = 1.3 + a;
+    {
+        let z = y + 3;
+    }
+
+    let z = y + 2;
+}
+
+fn main() {
+    let x = 1.3 + 3;
+    {
+	print("Hello");
+	print(x);
+	let y = test(4);
+    }
+
+    print(x);
+}
+
+
+main();
+        "#
+        .to_owned();
+
+        let mut lexer = Lexer::new(&input);
+        let mut parser = Parser::new(&mut lexer, &input);
+        let compiler = Compiler::new(&mut parser);
+
+        let output = compiler.compile().unwrap();
+
+        let mut expected = CompiledProgram {
+            ..Default::default()
+        };
+
+        expected.functions.push(Function::Defined {
+            name: "print".to_owned(),
+            code: vec![],
+        });
+
+        expected.functions.push(Function::Defined {
+            name: "test".to_owned(),
+            code: vec![
+                Instruction::LoadLiteral { dest: 2, src: 2 },
+                Instruction::Add {
+                    dest: 3,
+                    lhs: 2,
+                    rhs: 1,
+                },
+                Instruction::LoadLiteral { dest: 4, src: 2 },
+                Instruction::Add {
+                    dest: 5,
+                    lhs: 3,
+                    rhs: 4,
+                },
+                Instruction::LoadLiteral { dest: 6, src: 3 },
+                Instruction::Add {
+                    dest: 7,
+                    lhs: 3,
+                    rhs: 6,
+                },
+            ],
+        });
+
+        expected.functions.push(Function::Defined {
+            name: "main".to_owned(),
+            code: vec![
+                Instruction::LoadLiteral { dest: 1, src: 1 },
+                Instruction::LoadLiteral { dest: 2, src: 3 },
+                Instruction::Add {
+                    dest: 3,
+                    lhs: 1,
+                    rhs: 2,
+                },
+                // FIXME: don't reload functions that are already in reg
+                Instruction::LoadFunction { dest: 4, src: 0 },
+                Instruction::CallFunction { src: 4 },
+                Instruction::LoadFunction { dest: 5, src: 0 },
+                Instruction::CallFunction { src: 5 },
+                Instruction::LoadFunction { dest: 6, src: 1 },
+                Instruction::CallFunction { src: 6 },
+                Instruction::LoadFunction { dest: 7, src: 0 },
+                Instruction::CallFunction { src: 7 },
+            ],
+        });
+
+        expected.global_code = vec![
+            Instruction::LoadLiteral { dest: 1, src: 0 },
+            Instruction::LoadLiteral { dest: 2, src: 1 },
+            Instruction::Add {
+                dest: 3,
+                lhs: 1,
+                rhs: 2,
+            },
+            Instruction::LoadFunction { dest: 4, src: 2 },
+            Instruction::CallFunction { src: 4 },
+        ];
+
+        expected.literals = vec![
+            Literal::Integer(3),
+            Literal::Integer(4),
+            Literal::Float(1.3),
+            Literal::Integer(2),
+        ];
+
+        assert_eq!(output, expected)
+    }
+}

@@ -3,7 +3,7 @@ pub type LiteralId = u16;
 pub type FunctionId = u16;
 
 // FIXME MAKE IT ACTUAL BYTECODE
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum Instruction {
     LoadFunction {
         dest: Register,
