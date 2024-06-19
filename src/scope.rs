@@ -9,7 +9,6 @@ pub struct Value {
 #[derive(Debug, PartialEq)]
 pub enum ScopeType {
     Global,
-    Function,
     Local,
 }
 
@@ -29,10 +28,6 @@ impl Scope {
 
     pub fn is_global(&self) -> bool {
         self.r#type == ScopeType::Global
-    }
-
-    pub fn is_function(&self) -> bool {
-        self.r#type == ScopeType::Function
     }
 
     pub fn define(&self, name: &str, register: Register) {

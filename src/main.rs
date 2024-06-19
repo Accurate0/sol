@@ -11,6 +11,7 @@ use lexer::Lexer;
 use parser::Parser;
 use tracing::Level;
 use tracing_subscriber::{filter::Targets, layer::SubscriberExt, util::SubscriberInitExt};
+use vm::VM;
 
 mod ast;
 mod compiler;
@@ -61,11 +62,14 @@ fn main() -> Result<(), Box<dyn Error>> {
             file.read_to_string(&mut buffer)?;
             let mut lexer = Lexer::new(&buffer);
             let mut parser = Parser::new(&mut lexer, &buffer);
-            let mut compiler = Compiler::new(&mut parser);
+            let compiler = Compiler::new(&mut parser);
 
             let program = compiler.compile()?;
+            // tracing::info!("{:#?}", program);
 
-            tracing::info!("{:#?}", program);
+            let vm = VM::new(program);
+
+            vm.run()?;
         }
     }
 

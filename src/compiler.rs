@@ -8,13 +8,22 @@ use crate::{
 use thiserror::Error;
 
 #[derive(Debug, Error)]
-pub enum CompilerError {}
+pub enum CompilerError {
+    #[error("Unknown error")]
+    UnknownError,
+    #[error("{0} not found in scope", variable)]
+    VariableNotFound { variable: String },
+}
 
 #[derive(Default, Debug)]
-pub struct CompiledProgram {}
+pub struct CompiledProgram {
+    pub functions: Vec<Function>,
+    pub global_code: Vec<Instruction>,
+    pub literals: Vec<Literal>,
+}
 
 #[derive(Debug)]
-enum Function {
+pub enum Function {
     Defined {
         name: String,
         code: Vec<Instruction>,
@@ -56,25 +65,24 @@ where
         }
     }
 
-    pub fn compile(&mut self) -> Result<CompiledProgram, CompilerError> {
+    pub fn compile(mut self) -> Result<CompiledProgram, CompilerError> {
         while let Some(statement) = self.parser.next() {
-            self.compile_statement(&statement);
+            self.compile_statement(&statement)?;
         }
 
-        dbg!(&self.literals);
-        dbg!(&self.functions);
-        dbg!(&self.global_code);
+        drop(self.current_code);
 
-        Ok(CompiledProgram {})
+        Ok(CompiledProgram {
+            functions: self.functions,
+            global_code: Rc::into_inner(self.global_code)
+                .ok_or(CompilerError::UnknownError)?
+                .into_inner(),
+            literals: self.literals,
+        })
     }
 
-    #[allow(dead_code)]
     fn add_scope(&mut self) {
         self.scope_stack.push(Scope::new(ScopeType::Local));
-    }
-
-    fn add_function_scope(&mut self) {
-        self.scope_stack.push(Scope::new(ScopeType::Function));
     }
 
     fn define_current_scope(&mut self, name: &str, register: Register) {
@@ -82,16 +90,15 @@ where
         current_scope.define(name, register);
     }
 
-    fn resolve(&mut self, name: &str) -> Register {
+    fn resolve(&mut self, name: &str) -> Option<Register> {
         let scope_stack = &mut self.scope_stack.iter().rev();
         for v in scope_stack {
             if let Some(reg) = v.contains(name) {
-                // FIXME: don't pass function boundary
-                return reg;
+                return Some(reg);
             }
         }
 
-        unreachable!()
+        None
     }
 
     fn remove_scope(&mut self) {
@@ -104,22 +111,22 @@ where
         reg
     }
 
-    fn compile_function(&mut self, func: &ast::Function) {
+    fn compile_function(&mut self, func: &ast::Function) -> Result<(), CompilerError> {
         let prev_register_count = self.next_available_register;
         self.next_available_register = 1;
 
-        self.add_function_scope();
+        self.add_scope();
         let prev_code = self.current_code.replace(Vec::new());
 
-        for arg in &func.parameters {
-            self.define_current_scope(arg, self.next_available_register);
+        for arg_name in &func.parameters {
+            self.define_current_scope(arg_name, self.next_available_register);
             self.next_available_register += 1;
         }
 
         match *func.body {
             Statement::Block { ref body } => {
                 for statement in body {
-                    self.compile_statement(statement);
+                    self.compile_statement(statement)?;
                 }
             }
             _ => unreachable!(),
@@ -134,6 +141,7 @@ where
                 Function::Undefined { name } if *name == func.name => {
                     found_existing_function = Some(f)
                 }
+                Function::Defined { name, .. } if *name == func.name => unreachable!(),
                 Function::Defined { .. } => continue,
                 Function::Undefined { .. } => continue,
             }
@@ -153,21 +161,25 @@ where
 
         self.remove_scope();
         self.next_available_register = prev_register_count;
+
+        Ok(())
     }
 
-    fn compile_let(&mut self, name: &str, value: &ast::Expression) {
-        let expression_value_register = self.compile_expression(value);
+    fn compile_let(&mut self, name: &str, value: &ast::Expression) -> Result<(), CompilerError> {
+        let expression_value_register = self.compile_expression(value)?;
         self.define_current_scope(name, expression_value_register);
+
+        Ok(())
     }
 
     #[allow(unused)]
-    fn compile_expression(&mut self, expr: &ast::Expression) -> Register {
+    fn compile_expression(&mut self, expr: &ast::Expression) -> Result<Register, CompilerError> {
         // FIXME: potentially wasting registers
         match expr {
             ast::Expression::Prefix { op, expr } => todo!(),
             ast::Expression::Infix { op, lhs, rhs } => {
-                let lhs = self.compile_expression(lhs);
-                let rhs = self.compile_expression(rhs);
+                let lhs = self.compile_expression(lhs)?;
+                let rhs = self.compile_expression(rhs)?;
 
                 let dest = self.get_register();
 
@@ -181,7 +193,7 @@ where
 
                 self.current_code.borrow_mut().push(instruction);
 
-                dest
+                Ok(dest)
             }
             ast::Expression::Literal(lit) => {
                 let reg = self.get_register();
@@ -212,9 +224,13 @@ where
 
                 self.current_code.borrow_mut().push(instruction);
 
-                reg
+                Ok(reg)
             }
-            ast::Expression::Variable(name) => self.resolve(name),
+            ast::Expression::Variable(name) => {
+                self.resolve(name).ok_or(CompilerError::VariableNotFound {
+                    variable: name.to_owned(),
+                })
+            }
             ast::Expression::FunctionCall {
                 name: function_to_call,
                 args,
@@ -225,17 +241,19 @@ where
                     match function {
                         Function::Defined { name, code } if function_to_call == name => {
                             found_id = Some(index);
+                            break;
                         }
                         Function::Defined { name, code } => continue,
                         Function::Undefined { name } if function_to_call == name => {
-                            found_id = Some(index)
+                            found_id = Some(index);
+                            break;
                         }
                         Function::Undefined { name } => continue,
                     }
                 }
 
                 let found_id = match found_id {
-                    Some(f) => f as FunctionId,
+                    Some(f) => (self.functions.len() - f - 1) as FunctionId,
                     None => {
                         self.functions.push(Function::Undefined {
                             name: function_to_call.to_owned(),
@@ -256,16 +274,16 @@ where
 
                 self.current_code.borrow_mut().push(instruction);
 
-                reg
+                Ok(reg)
             }
         }
     }
 
     #[allow(unused)]
-    pub fn compile_statement(&mut self, statement: &Statement) {
+    pub fn compile_statement(&mut self, statement: &Statement) -> Result<(), CompilerError> {
         match statement {
             Statement::Const { name, value } => todo!(),
-            Statement::Let { name, value } => self.compile_let(name, value),
+            Statement::Let { name, value } => self.compile_let(name, value)?,
             Statement::If {
                 condition,
                 body,
@@ -273,14 +291,16 @@ where
             } => todo!(),
             Statement::Block { body } => {
                 for statement in body {
-                    self.compile_statement(statement)
+                    self.compile_statement(statement)?
                 }
             }
-            Statement::Function(func) => self.compile_function(func),
+            Statement::Function(func) => self.compile_function(func)?,
             Statement::Expression(expr) => {
                 self.compile_expression(expr);
             }
         }
+
+        Ok(())
     }
 }
 
