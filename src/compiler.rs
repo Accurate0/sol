@@ -1,10 +1,9 @@
-use std::{cell::RefCell, rc::Rc};
-
 use crate::{
     ast::{self, Literal, Statement},
     instructions::{FunctionId, Instruction, LiteralId, Register},
     scope::{Scope, ScopeType},
 };
+use std::{cell::RefCell, rc::Rc, u8};
 use thiserror::Error;
 
 #[derive(Debug, Error)]
@@ -19,18 +18,15 @@ pub enum CompilerError {
 pub struct CompiledProgram {
     pub functions: Vec<Function>,
     pub global_code: Vec<Instruction>,
+    pub global_register_count: u8,
     pub literals: Vec<Literal>,
 }
 
 #[derive(Debug, PartialEq)]
-pub enum Function {
-    Defined {
-        name: String,
-        code: Vec<Instruction>,
-    },
-    Undefined {
-        name: String,
-    },
+pub struct Function {
+    pub name: String,
+    pub code: Vec<Instruction>,
+    pub register_count: u8,
 }
 
 #[derive(Debug)]
@@ -72,11 +68,14 @@ where
 
         drop(self.current_code);
 
+        let global_register_count = self.next_available_register;
+
         Ok(CompiledProgram {
             functions: self.functions,
             global_code: Rc::into_inner(self.global_code)
                 .ok_or(CompilerError::UnknownError)?
                 .into_inner(),
+            global_register_count,
             literals: self.literals,
         })
     }
@@ -132,32 +131,16 @@ where
             _ => unreachable!(),
         }
 
+        self.current_code.borrow_mut().push(Instruction::Return);
+
         let function_code = self.current_code.replace(prev_code);
+        let used_registers = self.next_available_register;
 
-        let functions = self.functions.iter_mut().rev();
-        let mut found_existing_function = None;
-        for f in functions {
-            match f {
-                Function::Undefined { name } if *name == func.name => {
-                    found_existing_function = Some(f)
-                }
-                Function::Defined { name, .. } if *name == func.name => unreachable!(),
-                Function::Defined { .. } => continue,
-                Function::Undefined { .. } => continue,
-            }
-        }
-
-        if let Some(f) = found_existing_function {
-            *f = Function::Defined {
-                name: func.name.to_owned(),
-                code: function_code,
-            }
-        } else {
-            self.functions.push(Function::Defined {
-                name: func.name.to_owned(),
-                code: function_code,
-            });
-        }
+        self.functions.push(Function {
+            name: func.name.to_owned(),
+            code: function_code,
+            register_count: used_registers,
+        });
 
         self.remove_scope();
         self.next_available_register = prev_register_count;
@@ -172,10 +155,10 @@ where
         Ok(())
     }
 
-    #[allow(unused)]
     fn compile_expression(&mut self, expr: &ast::Expression) -> Result<Register, CompilerError> {
         // FIXME: potentially wasting registers
         match expr {
+            #[allow(unused)]
             ast::Expression::Prefix { op, expr } => todo!(),
             ast::Expression::Infix { op, lhs, rhs } => {
                 let lhs = self.compile_expression(lhs)?;
@@ -197,19 +180,17 @@ where
             }
             ast::Expression::Literal(lit) => {
                 let reg = self.get_register();
-                let mut literal_list = self.literals.iter().rev().enumerate();
-                let mut found_existing_literal = None;
+                let literal_list = self.literals.iter().enumerate();
                 let mut found_id = None;
                 for (index, literal) in literal_list {
                     if literal == lit {
                         found_id = Some(index as LiteralId);
-                        found_existing_literal = Some(literal);
                         break;
                     }
                 }
 
-                let literal_id = if let Some(existing_literal) = found_existing_literal {
-                    found_id.unwrap()
+                let literal_id = if let Some(found_id) = found_id {
+                    found_id
                 } else {
                     // FIXME:
                     self.literals.push(lit.clone());
@@ -235,32 +216,32 @@ where
                 name: function_to_call,
                 args,
             } => {
-                let mut function_list = self.functions.iter().rev().enumerate();
+                let function_list = self.functions.iter().rev().enumerate();
                 let mut found_id = None;
                 for (index, function) in function_list {
-                    match function {
-                        Function::Defined { name, code } if function_to_call == name => {
-                            found_id = Some(index);
-                            break;
-                        }
-                        Function::Defined { name, code } => continue,
-                        Function::Undefined { name } if function_to_call == name => {
-                            found_id = Some(index);
-                            break;
-                        }
-                        Function::Undefined { name } => continue,
+                    if *function.name == *function_to_call {
+                        found_id = Some(index);
                     }
                 }
 
                 let found_id = match found_id {
                     Some(f) => (self.functions.len() - f - 1) as FunctionId,
-                    None => {
-                        self.functions.push(Function::Undefined {
-                            name: function_to_call.to_owned(),
-                        });
-                        (self.functions.len() - 1) as FunctionId
-                    }
+                    _ => unreachable!(),
                 };
+
+                let mut regs = vec![];
+                for arg in args {
+                    regs.push(self.compile_expression(arg)?);
+                }
+
+                let start_reg = self.next_available_register;
+                for reg in regs {
+                    let dest = self.get_register();
+                    let mut current_code = self.current_code.borrow_mut();
+                    current_code.push(Instruction::Copy { dest, src: reg });
+                }
+
+                let last_reg = self.next_available_register;
 
                 let reg = self.get_register();
                 let instruction = Instruction::LoadFunction {
@@ -270,7 +251,11 @@ where
 
                 self.current_code.borrow_mut().push(instruction);
 
-                let instruction = Instruction::CallFunction { src: reg };
+                let instruction = Instruction::CallFunction {
+                    src: reg,
+                    arg_start: start_reg,
+                    arg_end: last_reg,
+                };
 
                 self.current_code.borrow_mut().push(instruction);
 
@@ -355,12 +340,13 @@ main();
             ..Default::default()
         };
 
-        expected.functions.push(Function::Defined {
+        expected.functions.push(Function {
             name: "print".to_owned(),
-            code: vec![],
+            code: vec![Instruction::Return],
+            register_count: 1,
         });
 
-        expected.functions.push(Function::Defined {
+        expected.functions.push(Function {
             name: "test".to_owned(),
             code: vec![
                 Instruction::LoadLiteral { dest: 2, src: 2 },
@@ -369,7 +355,7 @@ main();
                     lhs: 2,
                     rhs: 1,
                 },
-                Instruction::LoadLiteral { dest: 4, src: 2 },
+                Instruction::LoadLiteral { dest: 4, src: 0 },
                 Instruction::Add {
                     dest: 5,
                     lhs: 3,
@@ -381,29 +367,55 @@ main();
                     lhs: 3,
                     rhs: 6,
                 },
+                Instruction::Return,
             ],
+            register_count: 8,
         });
 
-        expected.functions.push(Function::Defined {
+        expected.functions.push(Function {
             name: "main".to_owned(),
             code: vec![
-                Instruction::LoadLiteral { dest: 1, src: 1 },
-                Instruction::LoadLiteral { dest: 2, src: 3 },
+                Instruction::LoadLiteral { dest: 1, src: 2 },
+                Instruction::LoadLiteral { dest: 2, src: 0 },
                 Instruction::Add {
                     dest: 3,
                     lhs: 1,
                     rhs: 2,
                 },
+                Instruction::LoadLiteral { dest: 4, src: 4 },
+                Instruction::Copy { dest: 5, src: 4 },
                 // FIXME: don't reload functions that are already in reg
-                Instruction::LoadFunction { dest: 4, src: 0 },
-                Instruction::CallFunction { src: 4 },
-                Instruction::LoadFunction { dest: 5, src: 0 },
-                Instruction::CallFunction { src: 5 },
-                Instruction::LoadFunction { dest: 6, src: 1 },
-                Instruction::CallFunction { src: 6 },
-                Instruction::LoadFunction { dest: 7, src: 0 },
-                Instruction::CallFunction { src: 7 },
+                Instruction::LoadFunction { dest: 6, src: 0 },
+                Instruction::CallFunction {
+                    src: 6,
+                    arg_start: 5,
+                    arg_end: 6,
+                },
+                Instruction::Copy { dest: 7, src: 3 },
+                Instruction::LoadFunction { dest: 8, src: 0 },
+                Instruction::CallFunction {
+                    src: 8,
+                    arg_start: 7,
+                    arg_end: 8,
+                },
+                Instruction::LoadLiteral { dest: 9, src: 1 },
+                Instruction::Copy { dest: 10, src: 9 },
+                Instruction::LoadFunction { dest: 11, src: 1 },
+                Instruction::CallFunction {
+                    src: 11,
+                    arg_start: 10,
+                    arg_end: 11,
+                },
+                Instruction::Copy { dest: 12, src: 3 },
+                Instruction::LoadFunction { dest: 13, src: 0 },
+                Instruction::CallFunction {
+                    src: 13,
+                    arg_start: 12,
+                    arg_end: 13,
+                },
+                Instruction::Return,
             ],
+            register_count: 14,
         });
 
         expected.global_code = vec![
@@ -415,16 +427,22 @@ main();
                 rhs: 2,
             },
             Instruction::LoadFunction { dest: 4, src: 2 },
-            Instruction::CallFunction { src: 4 },
+            Instruction::CallFunction {
+                src: 4,
+                arg_start: 4,
+                arg_end: 4,
+            },
         ];
+        expected.global_register_count = 5;
 
         expected.literals = vec![
             Literal::Integer(3),
             Literal::Integer(4),
             Literal::Float(1.3),
             Literal::Integer(2),
+            Literal::String("Hello".to_owned()),
         ];
 
-        assert_eq!(output, expected)
+        assert_eq!(expected, output)
     }
 }

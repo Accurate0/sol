@@ -12,6 +12,7 @@ pub enum ScopeType {
     Local,
 }
 
+#[allow(unused)]
 #[derive(Debug)]
 pub struct Scope {
     r#type: ScopeType,
@@ -26,6 +27,7 @@ impl Scope {
         }
     }
 
+    #[allow(dead_code)]
     pub fn is_global(&self) -> bool {
         self.r#type == ScopeType::Global
     }

@@ -2,15 +2,20 @@ pub type Register = u8;
 pub type LiteralId = u16;
 pub type FunctionId = u16;
 
-// FIXME MAKE IT ACTUAL BYTECODE
 #[derive(Debug, PartialEq)]
 pub enum Instruction {
+    Copy {
+        dest: Register,
+        src: Register,
+    },
     LoadFunction {
         dest: Register,
         src: FunctionId,
     },
     CallFunction {
         src: Register,
+        arg_start: Register,
+        arg_end: Register,
     },
     LoadLiteral {
         dest: Register,
@@ -36,6 +41,7 @@ pub enum Instruction {
         lhs: Register,
         rhs: Register,
     },
+    Return,
 }
 
 #[cfg(test)]

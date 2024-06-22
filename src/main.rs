@@ -65,7 +65,7 @@ fn main() -> Result<(), Box<dyn Error>> {
             let compiler = Compiler::new(&mut parser);
 
             let program = compiler.compile()?;
-            // tracing::info!("{:#?}", program);
+            tracing::info!("{:#?}", program);
 
             let vm = VM::new(program);
 

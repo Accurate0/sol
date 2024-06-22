@@ -470,7 +470,6 @@ mod tests {
         let statements = parser.collect::<Vec<_>>();
 
         assert_eq!(
-            statements,
             vec![
                 Statement::Const {
                     name: "wow".to_owned(),
@@ -481,7 +480,8 @@ mod tests {
                     vec![],
                     Statement::Block { body: vec![] }.into()
                 )),
-            ]
+            ],
+            statements,
         );
     }
 
@@ -525,7 +525,6 @@ fn new_function(arg1, arg2, arg3) {
         let statements = parser.collect::<Vec<_>>();
 
         assert_eq!(
-            statements,
             vec![
                 Statement::Const {
                     name: "wow".to_owned(),
@@ -601,7 +600,8 @@ fn new_function(arg1, arg2, arg3) {
                     }
                     .into()
                 ))
-            ]
+            ],
+            statements,
         );
     }
 
@@ -619,7 +619,6 @@ fn new_function(arg1, arg2, arg3) {
         let statements = parser.collect::<Vec<_>>();
 
         assert_eq!(
-            statements,
             vec![Statement::Function(Function::new(
                 "test".to_owned(),
                 vec![],
@@ -650,7 +649,8 @@ fn new_function(arg1, arg2, arg3) {
                     },]
                 }
                 .into()
-            ))]
+            ))],
+            statements,
         )
     }
 
@@ -668,7 +668,6 @@ fn new_function(arg1, arg2, arg3) {
         let statements = parser.collect::<Vec<_>>();
 
         assert_eq!(
-            statements,
             vec![Statement::Function(Function::new(
                 "test".to_owned(),
                 vec![],
@@ -688,7 +687,8 @@ fn new_function(arg1, arg2, arg3) {
                     },]
                 }
                 .into()
-            ))]
+            ))],
+            statements,
         )
     }
 
@@ -709,7 +709,6 @@ fn new_function(arg1, arg2, arg3) {
         let statements = parser.collect::<Vec<_>>();
 
         assert_eq!(
-            statements,
             vec![
                 Statement::Const {
                     name: "wow".to_owned(),
@@ -726,7 +725,8 @@ fn new_function(arg1, arg2, arg3) {
                     }
                     .into()
                 )),
-            ]
+            ],
+            statements,
         );
     }
 
@@ -748,7 +748,6 @@ fn new_function(arg1, arg2, arg3) {
         let statements = parser.collect::<Vec<_>>();
 
         assert_eq!(
-            statements,
             vec![
                 Statement::Function(Function::new(
                     "test".to_owned(),
@@ -770,7 +769,8 @@ fn new_function(arg1, arg2, arg3) {
                     vec![],
                     Statement::Block { body: vec![] }.into()
                 ))
-            ]
+            ],
+            statements,
         )
     }
 
@@ -790,7 +790,6 @@ fn new_function(arg1, arg2, arg3) {
         let statements = parser.collect::<Vec<_>>();
 
         assert_eq!(
-            statements,
             vec![Statement::Function(Function::new(
                 "test".to_owned(),
                 vec![],
@@ -802,7 +801,8 @@ fn new_function(arg1, arg2, arg3) {
                     })]
                 }
                 .into()
-            )),]
+            )),],
+            statements,
         )
     }
 
@@ -824,7 +824,6 @@ fn new_function(arg1, arg2, arg3) {
         let statements = parser.collect::<Vec<_>>();
 
         assert_eq!(
-            statements,
             vec![
                 Statement::Function(Function::new(
                     "test".to_owned(),
@@ -851,7 +850,8 @@ fn new_function(arg1, arg2, arg3) {
                     vec![],
                     Statement::Block { body: vec![] }.into()
                 ))
-            ]
+            ],
+            statements,
         )
     }
 
@@ -872,7 +872,6 @@ fn new_function(arg1, arg2, arg3) {
         let statements = parser.collect::<Vec<_>>();
 
         assert_eq!(
-            statements,
             vec![Statement::Function(Function::new(
                 "test".to_owned(),
                 vec![],
@@ -912,7 +911,8 @@ fn new_function(arg1, arg2, arg3) {
                     ]
                 }
                 .into()
-            ))]
+            ))],
+            statements,
         )
     }
 }

@@ -416,7 +416,6 @@ mod tests {
     use super::*;
     use pretty_assertions::assert_eq;
 
-    // NOT LOOKING AT THE SPAN, GOING INSANE
     impl PartialEq for Token {
         fn eq(&self, other: &Self) -> bool {
             self.kind == other.kind
@@ -434,7 +433,6 @@ mod tests {
         let tokens = lexer.into_iter().collect::<Vec<_>>();
 
         assert_eq!(
-            tokens,
             vec![
                 Token::new(
                     TokenKind::Identifier,
@@ -532,7 +530,8 @@ mod tests {
                         line: 1
                     }
                 )
-            ]
+            ],
+            tokens,
         );
     }
 
@@ -548,7 +547,6 @@ mod tests {
         let tokens = lexer.into_iter().collect::<Vec<_>>();
 
         assert_eq!(
-            tokens,
             vec![
                 Token::new(
                     TokenKind::Identifier,
@@ -758,7 +756,8 @@ mod tests {
                         line: 1
                     }
                 ),
-            ]
+            ],
+            tokens,
         )
     }
 
@@ -774,7 +773,6 @@ mod tests {
         let tokens = lexer.into_iter().collect::<Vec<_>>();
 
         assert_eq!(
-            tokens,
             vec![
                 Token::new(
                     TokenKind::Identifier,
@@ -928,7 +926,8 @@ mod tests {
                         line: 1
                     }
                 ),
-            ]
+            ],
+            tokens,
         )
     }
 
@@ -943,7 +942,6 @@ mod tests {
         let tokens = lexer.into_iter().collect::<Vec<_>>();
 
         assert_eq!(
-            tokens,
             vec![
                 Token::new(
                     TokenKind::Identifier,
@@ -1033,7 +1031,8 @@ mod tests {
                         line: 1
                     }
                 ),
-            ]
+            ],
+            tokens,
         );
     }
 
@@ -1074,7 +1073,6 @@ fn new_function(arg1, arg2, arg3) {
         let lexer = Lexer::new(input);
         let tokens = lexer.into_iter().collect::<Vec<_>>();
         assert_eq!(
-            tokens,
             vec![
                 Token::new(
                     TokenKind::Identifier,
@@ -1724,7 +1722,8 @@ fn new_function(arg1, arg2, arg3) {
                         line: 1
                     }
                 ),
-            ]
+            ],
+            tokens,
         )
     }
 
@@ -1741,7 +1740,6 @@ fn new_function(arg1, arg2, arg3) {
         let lexer = Lexer::new(input);
         let tokens = lexer.into_iter().collect::<Vec<_>>();
         assert_eq!(
-            tokens,
             vec![
                 Token::new(
                     TokenKind::Identifier,
@@ -1879,7 +1877,8 @@ fn new_function(arg1, arg2, arg3) {
                         line: 1
                     }
                 ),
-            ]
+            ],
+            tokens,
         );
     }
 }

@@ -1,27 +1,32 @@
-use std::borrow::Cow;
-use std::usize;
-use thiserror::Error;
-
 use crate::{
     ast,
-    compiler::{self, CompiledProgram},
+    compiler::{CompiledProgram, Function},
     instructions::Instruction,
 };
+use std::borrow::Cow;
+use thiserror::Error;
+
+struct SavedCallFrame<'a> {
+    pub ip: usize,
+    pub code: &'a Vec<Instruction>,
+    pub register_count: u8,
+}
 
 #[derive(Error, Debug)]
 pub enum ExecutionError {}
 
-#[derive(Default, Debug)]
+#[derive(Default, Debug, Clone)]
 pub enum RegisterValue<'a> {
     #[default]
     Empty,
     Literal(Cow<'a, ast::Literal>),
-    Function(&'a compiler::Function),
+    Function(&'a Function),
 }
 
 pub struct VM {
-    functions: Vec<compiler::Function>,
+    functions: Vec<Function>,
     global_code: Vec<Instruction>,
+    global_register_count: u8,
     literals: Vec<ast::Literal>,
 }
 
@@ -65,80 +70,135 @@ impl VM {
         Self {
             functions: compiled_program.functions,
             global_code: compiled_program.global_code,
+            global_register_count: compiled_program.global_register_count,
             literals: compiled_program.literals,
+        }
+    }
+
+    fn print_registers(window: &[RegisterValue]) {
+        for (i, item) in window.iter().enumerate() {
+            match item {
+                RegisterValue::Empty => {}
+                RegisterValue::Literal(l) => tracing::info!("{i} {:?}", l),
+                RegisterValue::Function(f) => tracing::info!("{i} {:?}", f.name),
+            }
         }
     }
 
     pub fn run(&self) -> Result<(), ExecutionError> {
         let mut registers = Vec::<RegisterValue>::with_capacity(u8::MAX as usize);
         registers.resize_with(u8::MAX as usize, Default::default);
-        let mut saved_ip_stack = vec![];
-        let mut saved_code_stack = vec![];
 
+        let mut saved_call_frames = Vec::<SavedCallFrame>::new();
         let mut current_code = &self.global_code;
+        let mut register_window = &mut registers[0..];
+        let mut base_register = 0;
 
         let mut ip = 0;
         loop {
             if ip >= current_code.len() {
-                if !saved_ip_stack.is_empty() {
-                    ip = saved_ip_stack.pop().unwrap();
-                    current_code = saved_code_stack.pop().unwrap();
-                    continue;
-                }
-
                 break;
             }
 
             let current_instruction = &current_code[ip];
-            // tracing::info!("executing: {:?}", current_instruction);
-            // tracing::info!("executing: {:?}", ip);
-            // tracing::info!("executing: {:?}", current_code);
+            tracing::info!("executing: {:?}", current_instruction);
+            // tracing::info!("ip: {:?}", ip);
+            // tracing::info!("code: {:?}", current_code);
+            // tracing::info!("reg: {:?}", register_window);
+            // tracing::info!("base_reg: {:?}", base_register);
+
+            Self::print_registers(register_window);
+
+            println!();
 
             match current_instruction {
+                Instruction::Return => {
+                    if let Some(saved_call_frame) = saved_call_frames.pop() {
+                        if let Some(current_call_frame) = saved_call_frames.last() {
+                            base_register -= current_call_frame.register_count as usize;
+                        } else {
+                            base_register -= self.global_register_count as usize;
+                        }
+
+                        register_window = &mut registers[base_register..];
+
+                        ip = saved_call_frame.ip + 1;
+                        current_code = saved_call_frame.code;
+                        continue;
+                    };
+                }
                 Instruction::LoadFunction { dest, src } => {
                     let func = &self.functions[*src as usize];
-                    registers[*dest as usize] = RegisterValue::Function(func);
+                    register_window[*dest as usize] = RegisterValue::Function(func);
                 }
-                Instruction::CallFunction { src } => {
-                    let func = &registers[*src as usize];
+                Instruction::CallFunction {
+                    src,
+                    ..
+                    // arg_start,
+                    // arg_end,
+                } => {
+                    let func = &register_window[*src as usize];
                     let func = match func {
                         RegisterValue::Function(f) => f,
                         _ => unreachable!(),
                     };
 
-                    // FIXME: REGISTER WINDOW
-                    saved_ip_stack.push(ip + 1);
-                    saved_code_stack.push(current_code);
+                    // eprintln!("DEBUGPRINT[2]: vm.rs:123: arg_start={:#?}", arg_start);
+                    // eprintln!("DEBUGPRINT[3]: vm.rs:124: arg_end={:#?}", arg_end);
+                    // tracing::info!("func: {:?}", func);
 
-                    current_code = match func {
-                        compiler::Function::Defined { code, .. } => code,
-                        _ => unreachable!(),
-                    };
+
+                    let old_code = current_code;
+                    let old_ip = ip;
+
+                    current_code = &func.code;
                     ip = 0;
+
+                    let register_count = &func.register_count;
+                    if let Some(current_call_frame) = saved_call_frames.last() {
+                        base_register += current_call_frame.register_count as usize;
+                    } else {
+                        base_register += self.global_register_count as usize;
+                    }
+                    register_window = &mut registers[base_register..];
+
+                    saved_call_frames.push(SavedCallFrame {
+                        ip: old_ip,
+                        code: old_code,
+                        register_count: *register_count,
+                    });
+
+                    // tracing::warn!("register: {:?}", register_window);
+                    // tracing::warn!("register: {:?}", self.global_register_count);
+                    // tracing::warn!("register: {:?}", register_count);
+
+
                     continue;
                 }
                 Instruction::LoadLiteral { dest, src } => {
                     let literal = &self.literals[*src as usize];
-                    registers[*dest as usize] = RegisterValue::Literal(Cow::Borrowed(literal));
+                    register_window[*dest as usize] =
+                        RegisterValue::Literal(Cow::Borrowed(literal));
                 }
-                Instruction::Add { dest, lhs, rhs } => {
-                    impl_binary_op!(registers, dest, lhs, +, rhs)
-                }
-                Instruction::Sub { dest, lhs, rhs } => {
-                    impl_binary_op!(registers, dest, lhs, -, rhs)
-                }
-                Instruction::Mul { dest, lhs, rhs } => {
-                    impl_binary_op!(registers, dest, lhs, *, rhs)
-                }
-                Instruction::Div { dest, lhs, rhs } => {
-                    impl_binary_op!(registers, dest, lhs, /, rhs)
-                }
+                Instruction::Add { dest, lhs, rhs } =>
+                    impl_binary_op!(register_window, dest, lhs, +, rhs),
+
+                Instruction::Sub { dest, lhs, rhs } =>
+                    impl_binary_op!(register_window, dest, lhs, -, rhs),
+
+                Instruction::Mul { dest, lhs, rhs } =>
+                    impl_binary_op!(register_window, dest, lhs, *, rhs),
+
+                Instruction::Div { dest, lhs, rhs } =>
+                    impl_binary_op!(register_window, dest, lhs, /, rhs),
+
+                Instruction::Copy { dest, src } => register_window[*dest as usize] = register_window[*src as usize].clone(),
             }
 
             ip += 1;
         }
 
-        dbg!(registers);
+        // dbg!(registers);
 
         Ok(())
     }
