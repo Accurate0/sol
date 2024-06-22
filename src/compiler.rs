@@ -253,8 +253,7 @@ where
 
                 let instruction = Instruction::CallFunction {
                     src: reg,
-                    arg_start: start_reg,
-                    arg_end: last_reg,
+                    args: start_reg..last_reg,
                 };
 
                 self.current_code.borrow_mut().push(instruction);
@@ -386,32 +385,22 @@ main();
                 Instruction::Copy { dest: 5, src: 4 },
                 // FIXME: don't reload functions that are already in reg
                 Instruction::LoadFunction { dest: 6, src: 0 },
-                Instruction::CallFunction {
-                    src: 6,
-                    arg_start: 5,
-                    arg_end: 6,
-                },
+                Instruction::CallFunction { src: 6, args: 5..6 },
                 Instruction::Copy { dest: 7, src: 3 },
                 Instruction::LoadFunction { dest: 8, src: 0 },
-                Instruction::CallFunction {
-                    src: 8,
-                    arg_start: 7,
-                    arg_end: 8,
-                },
+                Instruction::CallFunction { src: 8, args: 7..8 },
                 Instruction::LoadLiteral { dest: 9, src: 1 },
                 Instruction::Copy { dest: 10, src: 9 },
                 Instruction::LoadFunction { dest: 11, src: 1 },
                 Instruction::CallFunction {
                     src: 11,
-                    arg_start: 10,
-                    arg_end: 11,
+                    args: 10..11,
                 },
                 Instruction::Copy { dest: 12, src: 3 },
                 Instruction::LoadFunction { dest: 13, src: 0 },
                 Instruction::CallFunction {
                     src: 13,
-                    arg_start: 12,
-                    arg_end: 13,
+                    args: 12..13,
                 },
                 Instruction::Return,
             ],
@@ -427,11 +416,7 @@ main();
                 rhs: 2,
             },
             Instruction::LoadFunction { dest: 4, src: 2 },
-            Instruction::CallFunction {
-                src: 4,
-                arg_start: 4,
-                arg_end: 4,
-            },
+            Instruction::CallFunction { src: 4, args: 4..4 },
         ];
         expected.global_register_count = 5;
 

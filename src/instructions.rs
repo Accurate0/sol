@@ -1,3 +1,5 @@
+use std::ops::Range;
+
 pub type Register = u8;
 pub type LiteralId = u16;
 pub type FunctionId = u16;
@@ -14,8 +16,7 @@ pub enum Instruction {
     },
     CallFunction {
         src: Register,
-        arg_start: Register,
-        arg_end: Register,
+        args: Range<Register>,
     },
     LoadLiteral {
         dest: Register,

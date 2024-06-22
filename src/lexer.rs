@@ -1,5 +1,6 @@
 use std::{
     fmt::{self, Display},
+    iter::Peekable,
     ops::{Index, Range},
     str::Chars,
 };
@@ -100,7 +101,7 @@ pub struct Lexer<'a> {
 }
 
 pub struct Cursor<'a> {
-    chars: Chars<'a>,
+    chars: Peekable<Chars<'a>>,
     current_consumed: usize,
     line: usize,
 }
@@ -108,14 +109,14 @@ pub struct Cursor<'a> {
 impl<'a> Cursor<'a> {
     pub fn new(chars: Chars<'a>) -> Self {
         Self {
-            chars,
+            chars: chars.peekable(),
             current_consumed: 0,
             line: 1,
         }
     }
 
-    fn peek(&self) -> char {
-        self.chars.clone().next().unwrap_or('\0')
+    fn peek(&mut self) -> char {
+        *self.chars.peek().unwrap_or(&'\0')
     }
 
     fn current(&self) -> usize {

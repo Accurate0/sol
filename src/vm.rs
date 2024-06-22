@@ -131,12 +131,7 @@ impl VM {
                     let func = &self.functions[*src as usize];
                     register_window[*dest as usize] = RegisterValue::Function(func);
                 }
-                Instruction::CallFunction {
-                    src,
-                    ..
-                    // arg_start,
-                    // arg_end,
-                } => {
+                Instruction::CallFunction { src, args } => {
                     let func = &register_window[*src as usize];
                     let func = match func {
                         RegisterValue::Function(f) => f,
@@ -147,21 +142,40 @@ impl VM {
                     // eprintln!("DEBUGPRINT[3]: vm.rs:124: arg_end={:#?}", arg_end);
                     // tracing::info!("func: {:?}", func);
 
-
                     let old_code = current_code;
                     let old_ip = ip;
 
                     current_code = &func.code;
                     ip = 0;
 
+                    let old_base = base_register;
                     let register_count = &func.register_count;
                     if let Some(current_call_frame) = saved_call_frames.last() {
                         base_register += current_call_frame.register_count as usize;
                     } else {
                         base_register += self.global_register_count as usize;
                     }
-                    register_window = &mut registers[base_register..];
 
+                    let (old_function, new_function) = registers.split_at_mut(base_register);
+
+                    // tracing::warn!("FUNCTION CALL: OLD");
+                    // Self::print_registers(old_function);
+
+                    let arg_start = old_base + args.start as usize;
+                    let arg_end = old_base + args.end as usize;
+                    let registers_to_copy = &old_function[arg_start..arg_end];
+
+                    // tracing::warn!("FUNCTION CALL: COPY");
+                    // Self::print_registers(registers_to_copy);
+
+                    for (index, register) in registers_to_copy.iter().enumerate() {
+                        new_function[index + 1] = register.clone();
+                    }
+
+                    // tracing::warn!("FUNCTION CALL: NEW");
+                    // Self::print_registers(new_function);
+
+                    register_window = &mut registers[base_register..];
                     saved_call_frames.push(SavedCallFrame {
                         ip: old_ip,
                         code: old_code,
@@ -172,27 +186,34 @@ impl VM {
                     // tracing::warn!("register: {:?}", self.global_register_count);
                     // tracing::warn!("register: {:?}", register_count);
 
-
                     continue;
                 }
+
                 Instruction::LoadLiteral { dest, src } => {
                     let literal = &self.literals[*src as usize];
                     register_window[*dest as usize] =
                         RegisterValue::Literal(Cow::Borrowed(literal));
                 }
-                Instruction::Add { dest, lhs, rhs } =>
-                    impl_binary_op!(register_window, dest, lhs, +, rhs),
 
-                Instruction::Sub { dest, lhs, rhs } =>
-                    impl_binary_op!(register_window, dest, lhs, -, rhs),
+                Instruction::Add { dest, lhs, rhs } => {
+                    impl_binary_op!(register_window, dest, lhs, +, rhs)
+                }
 
-                Instruction::Mul { dest, lhs, rhs } =>
-                    impl_binary_op!(register_window, dest, lhs, *, rhs),
+                Instruction::Sub { dest, lhs, rhs } => {
+                    impl_binary_op!(register_window, dest, lhs, -, rhs)
+                }
 
-                Instruction::Div { dest, lhs, rhs } =>
-                    impl_binary_op!(register_window, dest, lhs, /, rhs),
+                Instruction::Mul { dest, lhs, rhs } => {
+                    impl_binary_op!(register_window, dest, lhs, *, rhs)
+                }
 
-                Instruction::Copy { dest, src } => register_window[*dest as usize] = register_window[*src as usize].clone(),
+                Instruction::Div { dest, lhs, rhs } => {
+                    impl_binary_op!(register_window, dest, lhs, /, rhs)
+                }
+
+                Instruction::Copy { dest, src } => {
+                    register_window[*dest as usize] = register_window[*src as usize].clone()
+                }
             }
 
             ip += 1;
