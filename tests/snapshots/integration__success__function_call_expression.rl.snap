@@ -1,0 +1,6 @@
+---
+source: tests/integration.rs
+expression: output
+---
+5
+test: 15
