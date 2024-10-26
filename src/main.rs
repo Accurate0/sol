@@ -103,7 +103,7 @@ fn main() -> ExitCode {
 
             let program = compiler.compile()?;
 
-            let vm = VM::new(program).define_native_function("noop".to_owned(), |_| {});
+            let vm = VM::new(program);
 
             vm.run()?;
 

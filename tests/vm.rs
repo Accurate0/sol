@@ -78,3 +78,22 @@ fn prefix_boolean() {
 
     assert_compact_debug_snapshot!(register_state);
 }
+
+#[test]
+fn native_function() {
+    let input = r#"
+        test_function();
+        "#
+    .to_owned();
+
+    let mut lexer = Lexer::new(&input);
+    let mut parser = Parser::new(&mut lexer, &input);
+    let compiler = Compiler::new(&mut parser);
+
+    let program = compiler.compile().unwrap();
+
+    let vm = VM::new(program).define_native_function("test_function".to_owned(), |_| {});
+    let register_state = vm.run_with_registers_returned();
+
+    assert_compact_debug_snapshot!(register_state);
+}

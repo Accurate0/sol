@@ -47,6 +47,7 @@ impl VM {
         }
     }
 
+    #[allow(unused)]
     pub fn define_native_function(mut self, name: String, function: NativeFunctionType) -> Self {
         self.native_functions.insert(name, function);
 
@@ -125,7 +126,7 @@ impl VM {
                         }
                     };
 
-                    // TODO: could be slow to check native function list on every stdlib func
+                    // TODO: could be slow to check native function list every
                     let native_function = self
                         .native_functions
                         .get(function_name)
