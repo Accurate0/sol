@@ -1,0 +1,31 @@
+---
+source: tests/parser.rs
+expression: statements
+---
+[
+    Function(
+        Function {
+            name: "test",
+            parameters: [],
+            body: Block {
+                body: [
+                    Expression(
+                        Infix {
+                            op: Plus,
+                            lhs: Literal(
+                                Integer(
+                                    2,
+                                ),
+                            ),
+                            rhs: Literal(
+                                Float(
+                                    2.3,
+                                ),
+                            ),
+                        },
+                    ),
+                ],
+            },
+        },
+    ),
+]

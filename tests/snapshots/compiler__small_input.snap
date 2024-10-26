@@ -1,0 +1,166 @@
+---
+source: tests/compiler.rs
+expression: output
+---
+CompiledProgram {
+    functions: [
+        Function {
+            name: "print",
+            code: [
+                Return,
+            ],
+            register_count: 1,
+        },
+        Function {
+            name: "test",
+            code: [
+                LoadLiteral {
+                    dest: 2,
+                    src: 2,
+                },
+                Add {
+                    dest: 3,
+                    lhs: 2,
+                    rhs: 1,
+                },
+                LoadLiteral {
+                    dest: 4,
+                    src: 0,
+                },
+                Add {
+                    dest: 5,
+                    lhs: 3,
+                    rhs: 4,
+                },
+                LoadLiteral {
+                    dest: 6,
+                    src: 3,
+                },
+                Add {
+                    dest: 7,
+                    lhs: 3,
+                    rhs: 6,
+                },
+                Return,
+            ],
+            register_count: 8,
+        },
+        Function {
+            name: "main",
+            code: [
+                LoadLiteral {
+                    dest: 1,
+                    src: 2,
+                },
+                LoadLiteral {
+                    dest: 2,
+                    src: 0,
+                },
+                Add {
+                    dest: 3,
+                    lhs: 1,
+                    rhs: 2,
+                },
+                LoadLiteral {
+                    dest: 4,
+                    src: 4,
+                },
+                Copy {
+                    dest: 5,
+                    src: 4,
+                },
+                LoadFunction {
+                    dest: 6,
+                    src: 0,
+                },
+                CallFunction {
+                    src: 6,
+                    args: 5..6,
+                },
+                Copy {
+                    dest: 7,
+                    src: 3,
+                },
+                LoadFunction {
+                    dest: 8,
+                    src: 0,
+                },
+                CallFunction {
+                    src: 8,
+                    args: 7..8,
+                },
+                LoadLiteral {
+                    dest: 9,
+                    src: 1,
+                },
+                Copy {
+                    dest: 10,
+                    src: 9,
+                },
+                LoadFunction {
+                    dest: 11,
+                    src: 1,
+                },
+                CallFunction {
+                    src: 11,
+                    args: 10..11,
+                },
+                Copy {
+                    dest: 12,
+                    src: 3,
+                },
+                LoadFunction {
+                    dest: 13,
+                    src: 0,
+                },
+                CallFunction {
+                    src: 13,
+                    args: 12..13,
+                },
+                Return,
+            ],
+            register_count: 14,
+        },
+    ],
+    global_code: [
+        LoadLiteral {
+            dest: 1,
+            src: 0,
+        },
+        LoadLiteral {
+            dest: 2,
+            src: 1,
+        },
+        Add {
+            dest: 3,
+            lhs: 1,
+            rhs: 2,
+        },
+        LoadFunction {
+            dest: 4,
+            src: 2,
+        },
+        CallFunction {
+            src: 4,
+            args: 4..4,
+        },
+    ],
+    global_register_count: 5,
+    literals: [
+        Integer(
+            3,
+        ),
+        Integer(
+            4,
+        ),
+        Float(
+            1.3,
+        ),
+        Integer(
+            2,
+        ),
+        String(
+            "Hello",
+        ),
+    ],
+}

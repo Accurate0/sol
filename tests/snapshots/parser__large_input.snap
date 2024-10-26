@@ -1,0 +1,35 @@
+---
+source: tests/parser.rs
+expression: statements
+---
+[
+    Const {
+        name: "wow",
+        value: Literal(
+            Integer(
+                3,
+            ),
+        ),
+    },
+    Function(
+        Function {
+            name: "test",
+            parameters: [
+                "argv",
+            ],
+            body: Block {
+                body: [
+                    Let {
+                        name: "a",
+                        value: Literal(
+                            String(
+                                "hello",
+                            ),
+                        ),
+                        is_mutable: false,
+                    },
+                ],
+            },
+        },
+    ),
+]

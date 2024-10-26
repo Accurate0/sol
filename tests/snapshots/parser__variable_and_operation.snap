@@ -1,0 +1,68 @@
+---
+source: tests/parser.rs
+expression: statements
+---
+[
+    Function(
+        Function {
+            name: "test",
+            parameters: [],
+            body: Block {
+                body: [
+                    Let {
+                        name: "x",
+                        value: Literal(
+                            Integer(
+                                1,
+                            ),
+                        ),
+                        is_mutable: false,
+                    },
+                    Let {
+                        name: "z",
+                        value: Infix {
+                            op: Plus,
+                            lhs: Literal(
+                                Integer(
+                                    2,
+                                ),
+                            ),
+                            rhs: Variable(
+                                "x",
+                            ),
+                        },
+                        is_mutable: false,
+                    },
+                    Let {
+                        name: "y",
+                        value: Infix {
+                            op: Plus,
+                            lhs: Variable(
+                                "x",
+                            ),
+                            rhs: Literal(
+                                Integer(
+                                    3,
+                                ),
+                            ),
+                        },
+                        is_mutable: false,
+                    },
+                    Let {
+                        name: "r",
+                        value: Infix {
+                            op: Plus,
+                            lhs: Variable(
+                                "x",
+                            ),
+                            rhs: Variable(
+                                "z",
+                            ),
+                        },
+                        is_mutable: false,
+                    },
+                ],
+            },
+        },
+    ),
+]

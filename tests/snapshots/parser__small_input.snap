@@ -1,0 +1,23 @@
+---
+source: tests/parser.rs
+expression: statements
+---
+[
+    Const {
+        name: "wow",
+        value: Literal(
+            Integer(
+                3,
+            ),
+        ),
+    },
+    Function(
+        Function {
+            name: "test",
+            parameters: [],
+            body: Block {
+                body: [],
+            },
+        },
+    ),
+]

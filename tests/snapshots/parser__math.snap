@@ -1,0 +1,41 @@
+---
+source: tests/parser.rs
+expression: statements
+---
+[
+    Function(
+        Function {
+            name: "test",
+            parameters: [],
+            body: Block {
+                body: [
+                    Let {
+                        name: "x",
+                        value: Infix {
+                            op: Plus,
+                            lhs: Literal(
+                                Integer(
+                                    1,
+                                ),
+                            ),
+                            rhs: Infix {
+                                op: Divide,
+                                lhs: Literal(
+                                    Integer(
+                                        2,
+                                    ),
+                                ),
+                                rhs: Literal(
+                                    Integer(
+                                        3,
+                                    ),
+                                ),
+                            },
+                        },
+                        is_mutable: false,
+                    },
+                ],
+            },
+        },
+    ),
+]

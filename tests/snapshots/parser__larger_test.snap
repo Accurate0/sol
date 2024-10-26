@@ -1,0 +1,158 @@
+---
+source: tests/parser.rs
+expression: statements
+---
+[
+    Const {
+        name: "wow",
+        value: Literal(
+            Integer(
+                3,
+            ),
+        ),
+    },
+    Function(
+        Function {
+            name: "main",
+            parameters: [
+                "argv",
+            ],
+            body: Block {
+                body: [
+                    Let {
+                        name: "x",
+                        value: Literal(
+                            Integer(
+                                2,
+                            ),
+                        ),
+                        is_mutable: false,
+                    },
+                    Let {
+                        name: "y",
+                        value: Literal(
+                            Boolean(
+                                true,
+                            ),
+                        ),
+                        is_mutable: false,
+                    },
+                    Expression(
+                        FunctionCall {
+                            name: "print",
+                            args: [
+                                Literal(
+                                    String(
+                                        "test",
+                                    ),
+                                ),
+                            ],
+                        },
+                    ),
+                    Expression(
+                        FunctionCall {
+                            name: "print",
+                            args: [
+                                Literal(
+                                    Float(
+                                        1.3,
+                                    ),
+                                ),
+                            ],
+                        },
+                    ),
+                    Expression(
+                        FunctionCall {
+                            name: "print",
+                            args: [
+                                Variable(
+                                    "x",
+                                ),
+                            ],
+                        },
+                    ),
+                    Expression(
+                        FunctionCall {
+                            name: "print",
+                            args: [
+                                Literal(
+                                    Integer(
+                                        2,
+                                    ),
+                                ),
+                            ],
+                        },
+                    ),
+                    Expression(
+                        FunctionCall {
+                            name: "test",
+                            args: [],
+                        },
+                    ),
+                ],
+            },
+        },
+    ),
+    Function(
+        Function {
+            name: "test",
+            parameters: [],
+            body: Block {
+                body: [
+                    If {
+                        condition: Literal(
+                            Boolean(
+                                true,
+                            ),
+                        ),
+                        body: Block {
+                            body: [],
+                        },
+                        else_statement: Some(
+                            Block {
+                                body: [
+                                    Expression(
+                                        FunctionCall {
+                                            name: "print",
+                                            args: [
+                                                Literal(
+                                                    Integer(
+                                                        2,
+                                                    ),
+                                                ),
+                                            ],
+                                        },
+                                    ),
+                                ],
+                            },
+                        ),
+                    },
+                ],
+            },
+        },
+    ),
+    Function(
+        Function {
+            name: "new_function",
+            parameters: [
+                "arg1",
+                "arg2",
+                "arg3",
+            ],
+            body: Block {
+                body: [
+                    Block {
+                        body: [
+                            Expression(
+                                FunctionCall {
+                                    name: "test",
+                                    args: [],
+                                },
+                            ),
+                        ],
+                    },
+                ],
+            },
+        },
+    ),
+]

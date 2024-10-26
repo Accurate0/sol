@@ -1,0 +1,60 @@
+---
+source: tests/parser.rs
+expression: statements
+---
+[
+    Function(
+        Function {
+            name: "test",
+            parameters: [],
+            body: Block {
+                body: [
+                    Let {
+                        name: "z",
+                        value: Infix {
+                            op: Divide,
+                            lhs: Infix {
+                                op: Multiply,
+                                lhs: Literal(
+                                    Integer(
+                                        2,
+                                    ),
+                                ),
+                                rhs: Literal(
+                                    Integer(
+                                        2,
+                                    ),
+                                ),
+                            },
+                            rhs: Infix {
+                                op: Multiply,
+                                lhs: Infix {
+                                    op: Minus,
+                                    lhs: Literal(
+                                        Integer(
+                                            3,
+                                        ),
+                                    ),
+                                    rhs: Literal(
+                                        Integer(
+                                            4,
+                                        ),
+                                    ),
+                                },
+                                rhs: Prefix {
+                                    op: Minus,
+                                    expr: Literal(
+                                        Integer(
+                                            2,
+                                        ),
+                                    ),
+                                },
+                            },
+                        },
+                        is_mutable: false,
+                    },
+                ],
+            },
+        },
+    ),
+]
