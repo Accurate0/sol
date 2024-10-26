@@ -1,6 +1,7 @@
 use crate::{
-    ast,
+    ast::{self, Literal},
     compiler::{CompiledProgram, Function},
+    impl_binary_op,
     instructions::Instruction,
 };
 use std::borrow::Cow;
@@ -13,7 +14,10 @@ struct SavedCallFrame<'a> {
 }
 
 #[derive(Error, Debug)]
-pub enum ExecutionError {}
+pub enum ExecutionError {
+    #[error("{cause}")]
+    InvalidOperation { cause: String },
+}
 
 #[derive(Default, Debug, Clone)]
 pub enum RegisterValue<'a> {
@@ -28,41 +32,6 @@ pub struct VM {
     global_code: Vec<Instruction>,
     global_register_count: u8,
     literals: Vec<ast::Literal>,
-}
-
-macro_rules! impl_binary_op {
-    ($registers:expr, $dest: expr, $lhs:expr, $x:tt, $rhs:expr) => {
-        match (&$registers[*$lhs as usize], &$registers[*$rhs as usize]) {
-            (RegisterValue::Literal(lhs), RegisterValue::Literal(rhs)) => {
-                let lhs = lhs.as_ref();
-                let rhs = rhs.as_ref();
-
-                match (lhs, rhs) {
-                    (ast::Literal::Float(lhs), ast::Literal::Float(rhs)) => {
-                        $registers[*$dest as usize] =
-                            RegisterValue::Literal(Cow::Owned(ast::Literal::Float(lhs $x rhs)))
-                    }
-                    (ast::Literal::Float(lhs), ast::Literal::Integer(rhs)) => {
-                        $registers[*$dest as usize] = RegisterValue::Literal(Cow::Owned(
-                            ast::Literal::Float(*lhs $x *rhs as f64),
-                        ))
-                    }
-                    (ast::Literal::Integer(lhs), ast::Literal::Float(rhs)) => {
-                        $registers[*$dest as usize] = RegisterValue::Literal(Cow::Owned(
-                            ast::Literal::Float(*lhs as f64 $x *rhs),
-                        ))
-                    }
-                    (ast::Literal::Integer(lhs), ast::Literal::Integer(rhs)) => {
-                        $registers[*$dest as usize] =
-                            RegisterValue::Literal(Cow::Owned(ast::Literal::Integer(lhs $x rhs)))
-                    }
-
-                    _ => unreachable!(),
-                }
-            }
-            _ => unreachable!(),
-        }
-    };
 }
 
 impl VM {
@@ -209,6 +178,59 @@ impl VM {
 
                 Instruction::Copy { dest, src } => {
                     register_window[*dest as usize] = register_window[*src as usize].clone()
+                }
+                Instruction::PrefixNot { dest, rhs } => {
+                    let rhs = &register_window[*rhs as usize];
+
+                    match rhs {
+                        RegisterValue::Literal(literal) => match literal.as_ref() {
+                            ast::Literal::Boolean(v) => {
+                                register_window[*dest as usize] =
+                                    RegisterValue::Literal(Cow::Owned(Literal::Boolean(!v)))
+                            }
+
+                            _ => {
+                                return Err(ExecutionError::InvalidOperation {
+                                    cause: "cannot use '!' on non boolean type".to_owned(),
+                                })
+                            }
+                        },
+                        _ => {
+                            return Err(ExecutionError::InvalidOperation {
+                                cause: "'!' must be used on literals only".to_owned(),
+                            })
+                        }
+                    }
+                }
+                Instruction::PrefixSub { dest, rhs } => {
+                    let rhs = &register_window[*rhs as usize];
+
+                    match rhs {
+                        RegisterValue::Literal(literal) => match literal.as_ref() {
+                            ast::Literal::Float(v) => {
+                                let new_value = -(*v);
+                                register_window[*dest as usize] =
+                                    RegisterValue::Literal(Cow::Owned(Literal::Float(new_value)))
+                            }
+
+                            ast::Literal::Integer(v) => {
+                                let new_value = -(*v);
+                                register_window[*dest as usize] =
+                                    RegisterValue::Literal(Cow::Owned(Literal::Integer(new_value)))
+                            }
+
+                            _ => {
+                                return Err(ExecutionError::InvalidOperation {
+                                    cause: "'-' must be used on number types".to_owned(),
+                                })
+                            }
+                        },
+                        _ => {
+                            return Err(ExecutionError::InvalidOperation {
+                                cause: "'!' must be used on literals only".to_owned(),
+                            })
+                        }
+                    }
                 }
             }
 

@@ -17,8 +17,10 @@ impl From<ParserError> for CompilerError {
 pub enum CompilerError {
     #[error("{source}")]
     ParserError { source: ParserError },
-    #[error("unknown error")]
+    #[error("internal compiler error")]
     UnknownError,
+    #[error("{cause}")]
+    GeneralError { cause: String },
     #[error("variable '{0}' not found in scope", variable)]
     VariableNotFound { variable: String },
     #[error("variable '{0}' is not mutable", variable)]
@@ -155,7 +157,11 @@ where
                     self.compile_statement(statement)?;
                 }
             }
-            _ => unreachable!(),
+            _ => {
+                return Err(CompilerError::GeneralError {
+                    cause: "function body must container block".to_owned(),
+                })
+            }
         }
 
         self.current_code.borrow_mut().push(Instruction::Return);
@@ -213,7 +219,24 @@ where
         // FIXME: potentially wasting registers
         match expr {
             #[allow(unused)]
-            ast::Expression::Prefix { op, expr } => todo!(),
+            ast::Expression::Prefix { op, expr } => {
+                let rhs = self.compile_expression(expr)?;
+                let dest = self.get_register();
+
+                let instruction = match op {
+                    ast::Operator::Minus => Instruction::PrefixSub { dest, rhs },
+                    ast::Operator::Not => Instruction::PrefixNot { dest, rhs },
+                    _ => {
+                        return Err(CompilerError::GeneralError {
+                            cause: "prefix expression only works with '-' and '!'".to_owned(),
+                        })
+                    }
+                };
+
+                self.current_code.borrow_mut().push(instruction);
+
+                Ok(dest)
+            }
             ast::Expression::Infix { op, lhs, rhs } => {
                 let lhs = self.compile_expression(lhs)?;
                 let rhs = self.compile_expression(rhs)?;
@@ -225,7 +248,11 @@ where
                     ast::Operator::Minus => Instruction::Sub { dest, lhs, rhs },
                     ast::Operator::Divide => Instruction::Div { dest, lhs, rhs },
                     ast::Operator::Multiply => Instruction::Mul { dest, lhs, rhs },
-                    _ => unreachable!(),
+                    _ => {
+                        return Err(CompilerError::GeneralError {
+                            cause: "infix expression only works for '+', '-', '/', '*'".to_owned(),
+                        })
+                    }
                 };
 
                 self.current_code.borrow_mut().push(instruction);
@@ -280,7 +307,11 @@ where
 
                 let found_id = match found_id {
                     Some(f) => (self.functions.len() - f - 1) as FunctionId,
-                    _ => unreachable!(),
+                    _ => {
+                        return Err(CompilerError::GeneralError {
+                            cause: "function must exist".to_owned(),
+                        })
+                    }
                 };
 
                 let mut regs = vec![];

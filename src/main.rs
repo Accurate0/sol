@@ -17,9 +17,12 @@ mod ast;
 mod compiler;
 mod instructions;
 mod lexer;
+mod macros;
 mod parser;
 mod scope;
 mod vm;
+
+// TODO: Add basic type checking - should be done in same pass as parser?
 
 #[derive(clap::Parser, Debug)]
 #[command(version, about, long_about = None)]

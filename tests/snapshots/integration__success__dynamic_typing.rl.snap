@@ -1,0 +1,32 @@
+---
+source: tests/integration.rs
+expression: output
+---
+ INFO plrs: CompiledProgram {
+    functions: [],
+    global_code: [
+        LoadLiteral {
+            dest: 1,
+            src: 0,
+        },
+        LoadLiteral {
+            dest: 2,
+            src: 1,
+        },
+    ],
+    global_register_count: 3,
+    literals: [
+        String(
+            "wow",
+        ),
+        Integer(
+            2,
+        ),
+    ],
+}
+ INFO plrs::vm: executing: LoadLiteral { dest: 1, src: 0 }
+ INFO plrs::vm: 1 String("wow")
+
+ INFO plrs::vm: executing: LoadLiteral { dest: 2, src: 1 }
+ INFO plrs::vm: 1 String("wow")
+ INFO plrs::vm: 2 Integer(2)

@@ -22,6 +22,14 @@ pub enum Instruction {
         dest: Register,
         src: LiteralId,
     },
+    PrefixNot {
+        dest: Register,
+        rhs: Register,
+    },
+    PrefixSub {
+        dest: Register,
+        rhs: Register,
+    },
     Add {
         dest: Register,
         lhs: Register,

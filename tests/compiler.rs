@@ -60,3 +60,37 @@ x = 2;
 
     assert_debug_snapshot!(output);
 }
+
+#[test]
+fn prefix() {
+    let input = r#"
+let x = -3;
+let y = -(x + 3);
+        "#
+    .to_owned();
+
+    let mut lexer = Lexer::new(&input);
+    let mut parser = Parser::new(&mut lexer, &input);
+    let compiler = Compiler::new(&mut parser);
+
+    let output = compiler.compile().unwrap();
+
+    assert_debug_snapshot!(output);
+}
+
+#[test]
+fn prefix_boolean() {
+    let input = r#"
+let x = true;
+let y = !x;
+        "#
+    .to_owned();
+
+    let mut lexer = Lexer::new(&input);
+    let mut parser = Parser::new(&mut lexer, &input);
+    let compiler = Compiler::new(&mut parser);
+
+    let output = compiler.compile().unwrap();
+
+    assert_debug_snapshot!(output);
+}

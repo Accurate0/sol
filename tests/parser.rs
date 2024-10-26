@@ -272,3 +272,51 @@ fn variable_mutation() {
 
     assert_debug_snapshot!(statements);
 }
+
+#[test]
+fn prefix() {
+    let input = r#"
+        fn test() {
+            let x = -1;
+            let y = -(x + 3);
+        }
+        "#
+    .to_owned();
+
+    let mut lexer = Lexer::new(&input);
+    let parser = Parser::new(&mut lexer, &input);
+    let statements = parser.collect::<Vec<_>>();
+
+    assert!(statements.iter().all(|s| s.is_ok()));
+
+    let statements = statements
+        .into_iter()
+        .map(|s| s.unwrap())
+        .collect::<Vec<_>>();
+
+    assert_debug_snapshot!(statements);
+}
+
+#[test]
+fn prefix_boolean() {
+    let input = r#"
+        fn test() {
+            let x = true;
+            let y = !x;
+        }
+        "#
+    .to_owned();
+
+    let mut lexer = Lexer::new(&input);
+    let parser = Parser::new(&mut lexer, &input);
+    let statements = parser.collect::<Vec<_>>();
+
+    assert!(statements.iter().all(|s| s.is_ok()));
+
+    let statements = statements
+        .into_iter()
+        .map(|s| s.unwrap())
+        .collect::<Vec<_>>();
+
+    assert_debug_snapshot!(statements);
+}
