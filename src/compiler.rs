@@ -3,7 +3,7 @@ use crate::{
     instructions::{FunctionId, Instruction, LiteralId, Register},
     scope::{Scope, ScopeType},
 };
-use std::{cell::RefCell, rc::Rc, u8};
+use std::{cell::RefCell, rc::Rc};
 use thiserror::Error;
 
 #[derive(Debug, Error)]
@@ -263,6 +263,18 @@ where
         }
     }
 
+    pub fn compile_block(&mut self, body: &Vec<Statement>) -> Result<(), CompilerError> {
+        self.add_scope();
+
+        for statement in body {
+            self.compile_statement(statement)?
+        }
+
+        self.remove_scope();
+
+        Ok(())
+    }
+
     #[allow(unused)]
     pub fn compile_statement(&mut self, statement: &Statement) -> Result<(), CompilerError> {
         match statement {
@@ -273,11 +285,7 @@ where
                 body,
                 else_statement,
             } => todo!(),
-            Statement::Block { body } => {
-                for statement in body {
-                    self.compile_statement(statement)?
-                }
-            }
+            Statement::Block { body } => self.compile_block(body)?,
             Statement::Function(func) => self.compile_function(func)?,
             Statement::Expression(expr) => {
                 self.compile_expression(expr);

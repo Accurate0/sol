@@ -427,6 +427,16 @@ where
                     }
                 }
             }
+            TokenKind::OpenBrace => {
+                let statement = self.parse_block();
+                match statement {
+                    Ok(s) => Some(s),
+                    Err(e) => {
+                        tracing::error!("{e}");
+                        None
+                    }
+                }
+            }
             TokenKind::EndOfLine => {
                 let token = self.consume(TokenKind::EndOfLine);
                 if let Err(e) = token {

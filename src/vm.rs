@@ -107,10 +107,6 @@ impl VM {
             // tracing::info!("reg: {:?}", register_window);
             // tracing::info!("base_reg: {:?}", base_register);
 
-            Self::print_registers(register_window);
-
-            println!();
-
             match current_instruction {
                 Instruction::Return => {
                     if let Some(saved_call_frame) = saved_call_frames.pop() {
@@ -215,6 +211,9 @@ impl VM {
                     register_window[*dest as usize] = register_window[*src as usize].clone()
                 }
             }
+
+            Self::print_registers(register_window);
+            println!();
 
             ip += 1;
         }

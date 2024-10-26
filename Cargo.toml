@@ -9,7 +9,7 @@ fxhash = "0.2.1"
 thiserror = "1.0.61"
 tracing = "0.1.40"
 tracing-subscriber = "0.3.18"
+itertools = "0.13.0"
 
 [dev-dependencies]
-itertools = "0.13.0"
 pretty_assertions = "1.4.0"
