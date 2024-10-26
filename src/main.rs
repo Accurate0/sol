@@ -20,6 +20,7 @@ mod lexer;
 mod macros;
 mod parser;
 mod scope;
+mod stdlib;
 mod vm;
 
 // TODO: Add basic type checking - should be done in same pass as parser?
@@ -96,21 +97,7 @@ fn main() -> ExitCode {
 
             let program = compiler.compile()?;
 
-            let mut vm = VM::new(program);
-
-            vm.define_native_function("print".to_owned(), |args: Vec<vm::RegisterValue<'_>>| {
-                for arg in args {
-                    match arg {
-                        vm::RegisterValue::Empty => continue,
-                        vm::RegisterValue::Literal(literal) => print!("{}", literal.as_ref()),
-                        vm::RegisterValue::Function(f) => {
-                            print!("function: {} <{}>", f.name, f.code.len())
-                        }
-                    }
-                }
-
-                println!();
-            });
+            let vm = VM::new(program).define_native_function("noop".to_owned(), |_| {});
 
             vm.run()?;
 

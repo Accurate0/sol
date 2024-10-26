@@ -3,8 +3,9 @@ use crate::{
     compiler::{CompiledProgram, Function},
     impl_binary_op,
     instructions::Instruction,
+    stdlib::{NativeFunctionType, STANDARD_LIBRARY},
 };
-use std::borrow::Cow;
+use std::{borrow::Cow, collections::HashMap};
 use thiserror::Error;
 
 struct SavedCallFrame<'a> {
@@ -27,16 +28,9 @@ pub enum RegisterValue<'a> {
     Function(&'a Function),
 }
 
-type NativeFunctionType = fn(Vec<RegisterValue>);
-
-struct NativeFunction {
-    name: String,
-    function: NativeFunctionType,
-}
-
 pub struct VM {
     functions: Vec<Function>,
-    native_functions: Vec<NativeFunction>,
+    native_functions: HashMap<String, NativeFunctionType>,
     global_code: Vec<Instruction>,
     global_register_count: u8,
     literals: Vec<ast::Literal>,
@@ -53,9 +47,10 @@ impl VM {
         }
     }
 
-    pub fn define_native_function(&mut self, name: String, function: NativeFunctionType) {
-        self.native_functions
-            .push(NativeFunction { name, function });
+    pub fn define_native_function(mut self, name: String, function: NativeFunctionType) -> Self {
+        self.native_functions.insert(name, function);
+
+        self
     }
 
     fn print_registers(window: &[RegisterValue]) {
@@ -130,10 +125,11 @@ impl VM {
                         }
                     };
 
+                    // TODO: could be slow to check native function list on every stdlib func
                     let native_function = self
                         .native_functions
-                        .iter()
-                        .find(|f| f.name == *function_name);
+                        .get(function_name)
+                        .or_else(|| STANDARD_LIBRARY.get(function_name));
 
                     if native_function.is_none() {
                         return Err(ExecutionError::InvalidOperation {
@@ -151,7 +147,7 @@ impl VM {
                     }
 
                     // TODO: return value?
-                    (native_function.function)(arg_values);
+                    (native_function)(arg_values);
                 }
                 Instruction::CallFunction { src, args } => {
                     let func = &register_window[*src as usize];
