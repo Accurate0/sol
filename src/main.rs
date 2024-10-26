@@ -1,8 +1,8 @@
 use std::{
-    error::Error,
     fs::File,
     io::{self, ErrorKind, Read},
     path::Path,
+    process::ExitCode,
 };
 
 use clap::{Parser as _, Subcommand};
@@ -33,19 +33,21 @@ enum Commands {
     Run { file: String },
 }
 
-fn main() -> Result<(), Box<dyn Error>> {
+fn main() -> ExitCode {
+    let no_color = std::env::var("NO_COLOR").is_ok_and(|v| !v.is_empty());
     tracing_subscriber::registry()
         .with(Targets::default().with_default(Level::INFO))
         .with(
             tracing_subscriber::fmt::layer()
                 .without_time()
-                .with_ansi(true)
+                .with_ansi(!no_color)
                 .compact(),
         )
         .init();
 
     let args = Args::parse();
-    match args.command {
+
+    let main_internal = || match args.command {
         Commands::Run { file } => {
             let path = Path::new(&file);
             if !path.exists() {
@@ -70,8 +72,16 @@ fn main() -> Result<(), Box<dyn Error>> {
             let vm = VM::new(program);
 
             vm.run()?;
+
+            Ok::<(), Box<dyn std::error::Error>>(())
+        }
+    };
+
+    match main_internal() {
+        Ok(_) => ExitCode::SUCCESS,
+        Err(e) => {
+            tracing::error!("{}", e);
+            ExitCode::FAILURE
         }
     }
-
-    Ok(())
 }

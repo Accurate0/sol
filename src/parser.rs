@@ -408,7 +408,7 @@ impl<'a, I> Iterator for Parser<'a, I>
 where
     I: Iterator<Item = Token>,
 {
-    type Item = Statement;
+    type Item = Result<Statement, ParserError>;
 
     fn next(&mut self) -> Option<Self::Item> {
         let token = self.peek();
@@ -417,33 +417,15 @@ where
         }
 
         match self.peek() {
-            TokenKind::Identifier => {
-                let statement = self.parse_statement_identifier();
-                match statement {
-                    Ok(s) => Some(s),
-                    Err(e) => {
-                        tracing::error!("{e}");
-                        None
-                    }
-                }
-            }
-            TokenKind::OpenBrace => {
-                let statement = self.parse_block();
-                match statement {
-                    Ok(s) => Some(s),
-                    Err(e) => {
-                        tracing::error!("{e}");
-                        None
-                    }
-                }
-            }
+            TokenKind::Identifier => Some(self.parse_statement_identifier()),
+            TokenKind::OpenBrace => Some(self.parse_block()),
             TokenKind::EndOfLine => {
                 let token = self.consume(TokenKind::EndOfLine);
                 if let Err(e) = token {
-                    tracing::error!("{e}");
+                    Some(Err::<Statement, ParserError>(e))
+                } else {
+                    None
                 }
-
-                None
             }
             _ => {
                 let peeked_token = self.peek_token();
@@ -453,8 +435,7 @@ where
                     in_function: stringify!(parse),
                 };
 
-                tracing::error!("{e}");
-                None
+                Some(Err(e))
             }
         }
     }
@@ -478,6 +459,13 @@ mod tests {
         let mut lexer = Lexer::new(&input);
         let parser = Parser::new(&mut lexer, &input);
         let statements = parser.collect::<Vec<_>>();
+
+        assert!(statements.iter().all(|s| s.is_ok()));
+
+        let statements = statements
+            .into_iter()
+            .map(|s| s.unwrap())
+            .collect::<Vec<_>>();
 
         assert_eq!(
             vec![
@@ -533,6 +521,13 @@ fn new_function(arg1, arg2, arg3) {
         let mut lexer = Lexer::new(&input);
         let parser = Parser::new(&mut lexer, &input);
         let statements = parser.collect::<Vec<_>>();
+
+        assert!(statements.iter().all(|s| s.is_ok()));
+
+        let statements = statements
+            .into_iter()
+            .map(|s| s.unwrap())
+            .collect::<Vec<_>>();
 
         assert_eq!(
             vec![
@@ -628,6 +623,13 @@ fn new_function(arg1, arg2, arg3) {
         let parser = Parser::new(&mut lexer, &input);
         let statements = parser.collect::<Vec<_>>();
 
+        assert!(statements.iter().all(|s| s.is_ok()));
+
+        let statements = statements
+            .into_iter()
+            .map(|s| s.unwrap())
+            .collect::<Vec<_>>();
+
         assert_eq!(
             vec![Statement::Function(Function::new(
                 "test".to_owned(),
@@ -677,6 +679,13 @@ fn new_function(arg1, arg2, arg3) {
         let parser = Parser::new(&mut lexer, &input);
         let statements = parser.collect::<Vec<_>>();
 
+        assert!(statements.iter().all(|s| s.is_ok()));
+
+        let statements = statements
+            .into_iter()
+            .map(|s| s.unwrap())
+            .collect::<Vec<_>>();
+
         assert_eq!(
             vec![Statement::Function(Function::new(
                 "test".to_owned(),
@@ -718,6 +727,13 @@ fn new_function(arg1, arg2, arg3) {
 
         let statements = parser.collect::<Vec<_>>();
 
+        assert!(statements.iter().all(|s| s.is_ok()));
+
+        let statements = statements
+            .into_iter()
+            .map(|s| s.unwrap())
+            .collect::<Vec<_>>();
+
         assert_eq!(
             vec![
                 Statement::Const {
@@ -756,6 +772,13 @@ fn new_function(arg1, arg2, arg3) {
         let mut lexer = Lexer::new(&input);
         let parser = Parser::new(&mut lexer, &input);
         let statements = parser.collect::<Vec<_>>();
+
+        assert!(statements.iter().all(|s| s.is_ok()));
+
+        let statements = statements
+            .into_iter()
+            .map(|s| s.unwrap())
+            .collect::<Vec<_>>();
 
         assert_eq!(
             vec![
@@ -799,6 +822,13 @@ fn new_function(arg1, arg2, arg3) {
 
         let statements = parser.collect::<Vec<_>>();
 
+        assert!(statements.iter().all(|s| s.is_ok()));
+
+        let statements = statements
+            .into_iter()
+            .map(|s| s.unwrap())
+            .collect::<Vec<_>>();
+
         assert_eq!(
             vec![Statement::Function(Function::new(
                 "test".to_owned(),
@@ -832,6 +862,13 @@ fn new_function(arg1, arg2, arg3) {
         let mut lexer = Lexer::new(&input);
         let parser = Parser::new(&mut lexer, &input);
         let statements = parser.collect::<Vec<_>>();
+
+        assert!(statements.iter().all(|s| s.is_ok()));
+
+        let statements = statements
+            .into_iter()
+            .map(|s| s.unwrap())
+            .collect::<Vec<_>>();
 
         assert_eq!(
             vec![
@@ -880,6 +917,13 @@ fn new_function(arg1, arg2, arg3) {
         let mut lexer = Lexer::new(&input);
         let parser = Parser::new(&mut lexer, &input);
         let statements = parser.collect::<Vec<_>>();
+
+        assert!(statements.iter().all(|s| s.is_ok()));
+
+        let statements = statements
+            .into_iter()
+            .map(|s| s.unwrap())
+            .collect::<Vec<_>>();
 
         assert_eq!(
             vec![Statement::Function(Function::new(

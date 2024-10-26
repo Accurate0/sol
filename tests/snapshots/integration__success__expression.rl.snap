@@ -1,0 +1,47 @@
+---
+source: tests/integration.rs
+expression: output
+---
+ INFO plrs: CompiledProgram {
+    functions: [
+        Function {
+            name: "test",
+            code: [
+                LoadLiteral {
+                    dest: 1,
+                    src: 0,
+                },
+                LoadLiteral {
+                    dest: 2,
+                    src: 1,
+                },
+                Add {
+                    dest: 3,
+                    lhs: 2,
+                    rhs: 1,
+                },
+                LoadLiteral {
+                    dest: 4,
+                    src: 1,
+                },
+                Add {
+                    dest: 5,
+                    lhs: 1,
+                    rhs: 4,
+                },
+                Return,
+            ],
+            register_count: 6,
+        },
+    ],
+    global_code: [],
+    global_register_count: 1,
+    literals: [
+        Integer(
+            1,
+        ),
+        Integer(
+            3,
+        ),
+    ],
+}

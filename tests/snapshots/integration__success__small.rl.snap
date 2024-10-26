@@ -1,0 +1,369 @@
+---
+source: tests/integration.rs
+expression: output
+---
+ INFO plrs: CompiledProgram {
+    functions: [
+        Function {
+            name: "print",
+            code: [
+                Return,
+            ],
+            register_count: 1,
+        },
+        Function {
+            name: "test",
+            code: [
+                LoadLiteral {
+                    dest: 2,
+                    src: 2,
+                },
+                Add {
+                    dest: 3,
+                    lhs: 2,
+                    rhs: 1,
+                },
+                LoadLiteral {
+                    dest: 4,
+                    src: 0,
+                },
+                Add {
+                    dest: 5,
+                    lhs: 3,
+                    rhs: 4,
+                },
+                LoadLiteral {
+                    dest: 6,
+                    src: 3,
+                },
+                Add {
+                    dest: 7,
+                    lhs: 3,
+                    rhs: 6,
+                },
+                Return,
+            ],
+            register_count: 8,
+        },
+        Function {
+            name: "main",
+            code: [
+                LoadLiteral {
+                    dest: 1,
+                    src: 2,
+                },
+                LoadLiteral {
+                    dest: 2,
+                    src: 0,
+                },
+                Add {
+                    dest: 3,
+                    lhs: 1,
+                    rhs: 2,
+                },
+                LoadLiteral {
+                    dest: 4,
+                    src: 4,
+                },
+                Copy {
+                    dest: 5,
+                    src: 4,
+                },
+                LoadFunction {
+                    dest: 6,
+                    src: 0,
+                },
+                CallFunction {
+                    src: 6,
+                    args: 5..6,
+                },
+                Copy {
+                    dest: 7,
+                    src: 3,
+                },
+                LoadFunction {
+                    dest: 8,
+                    src: 0,
+                },
+                CallFunction {
+                    src: 8,
+                    args: 7..8,
+                },
+                LoadLiteral {
+                    dest: 9,
+                    src: 1,
+                },
+                Copy {
+                    dest: 10,
+                    src: 9,
+                },
+                LoadFunction {
+                    dest: 11,
+                    src: 1,
+                },
+                CallFunction {
+                    src: 11,
+                    args: 10..11,
+                },
+                Copy {
+                    dest: 12,
+                    src: 3,
+                },
+                LoadFunction {
+                    dest: 13,
+                    src: 0,
+                },
+                CallFunction {
+                    src: 13,
+                    args: 12..13,
+                },
+                Return,
+            ],
+            register_count: 14,
+        },
+    ],
+    global_code: [
+        LoadLiteral {
+            dest: 1,
+            src: 0,
+        },
+        LoadLiteral {
+            dest: 2,
+            src: 1,
+        },
+        Add {
+            dest: 3,
+            lhs: 1,
+            rhs: 2,
+        },
+        LoadFunction {
+            dest: 4,
+            src: 2,
+        },
+        CallFunction {
+            src: 4,
+            args: 4..4,
+        },
+    ],
+    global_register_count: 5,
+    literals: [
+        Integer(
+            3,
+        ),
+        Integer(
+            4,
+        ),
+        Float(
+            1.3,
+        ),
+        Integer(
+            2,
+        ),
+        String(
+            "Hello",
+        ),
+    ],
+}
+ INFO plrs::vm: executing: LoadLiteral { dest: 1, src: 0 }
+ INFO plrs::vm: 1 Integer(3)
+
+ INFO plrs::vm: executing: LoadLiteral { dest: 2, src: 1 }
+ INFO plrs::vm: 1 Integer(3)
+ INFO plrs::vm: 2 Integer(4)
+
+ INFO plrs::vm: executing: Add { dest: 3, lhs: 1, rhs: 2 }
+ INFO plrs::vm: 1 Integer(3)
+ INFO plrs::vm: 2 Integer(4)
+ INFO plrs::vm: 3 Integer(7)
+
+ INFO plrs::vm: executing: LoadFunction { dest: 4, src: 2 }
+ INFO plrs::vm: 1 Integer(3)
+ INFO plrs::vm: 2 Integer(4)
+ INFO plrs::vm: 3 Integer(7)
+ INFO plrs::vm: 4 "main"
+
+ INFO plrs::vm: executing: CallFunction { src: 4, args: 4..4 }
+ INFO plrs::vm: executing: LoadLiteral { dest: 1, src: 2 }
+ INFO plrs::vm: 1 Float(1.3)
+
+ INFO plrs::vm: executing: LoadLiteral { dest: 2, src: 0 }
+ INFO plrs::vm: 1 Float(1.3)
+ INFO plrs::vm: 2 Integer(3)
+
+ INFO plrs::vm: executing: Add { dest: 3, lhs: 1, rhs: 2 }
+ INFO plrs::vm: 1 Float(1.3)
+ INFO plrs::vm: 2 Integer(3)
+ INFO plrs::vm: 3 Float(4.3)
+
+ INFO plrs::vm: executing: LoadLiteral { dest: 4, src: 4 }
+ INFO plrs::vm: 1 Float(1.3)
+ INFO plrs::vm: 2 Integer(3)
+ INFO plrs::vm: 3 Float(4.3)
+ INFO plrs::vm: 4 String("Hello")
+
+ INFO plrs::vm: executing: Copy { dest: 5, src: 4 }
+ INFO plrs::vm: 1 Float(1.3)
+ INFO plrs::vm: 2 Integer(3)
+ INFO plrs::vm: 3 Float(4.3)
+ INFO plrs::vm: 4 String("Hello")
+ INFO plrs::vm: 5 String("Hello")
+
+ INFO plrs::vm: executing: LoadFunction { dest: 6, src: 0 }
+ INFO plrs::vm: 1 Float(1.3)
+ INFO plrs::vm: 2 Integer(3)
+ INFO plrs::vm: 3 Float(4.3)
+ INFO plrs::vm: 4 String("Hello")
+ INFO plrs::vm: 5 String("Hello")
+ INFO plrs::vm: 6 "print"
+
+ INFO plrs::vm: executing: CallFunction { src: 6, args: 5..6 }
+ INFO plrs::vm: executing: Return
+ INFO plrs::vm: executing: Copy { dest: 7, src: 3 }
+ INFO plrs::vm: 1 Float(1.3)
+ INFO plrs::vm: 2 Integer(3)
+ INFO plrs::vm: 3 Float(4.3)
+ INFO plrs::vm: 4 String("Hello")
+ INFO plrs::vm: 5 String("Hello")
+ INFO plrs::vm: 6 "print"
+ INFO plrs::vm: 7 Float(4.3)
+ INFO plrs::vm: 15 String("Hello")
+
+ INFO plrs::vm: executing: LoadFunction { dest: 8, src: 0 }
+ INFO plrs::vm: 1 Float(1.3)
+ INFO plrs::vm: 2 Integer(3)
+ INFO plrs::vm: 3 Float(4.3)
+ INFO plrs::vm: 4 String("Hello")
+ INFO plrs::vm: 5 String("Hello")
+ INFO plrs::vm: 6 "print"
+ INFO plrs::vm: 7 Float(4.3)
+ INFO plrs::vm: 8 "print"
+ INFO plrs::vm: 15 String("Hello")
+
+ INFO plrs::vm: executing: CallFunction { src: 8, args: 7..8 }
+ INFO plrs::vm: executing: Return
+ INFO plrs::vm: executing: LoadLiteral { dest: 9, src: 1 }
+ INFO plrs::vm: 1 Float(1.3)
+ INFO plrs::vm: 2 Integer(3)
+ INFO plrs::vm: 3 Float(4.3)
+ INFO plrs::vm: 4 String("Hello")
+ INFO plrs::vm: 5 String("Hello")
+ INFO plrs::vm: 6 "print"
+ INFO plrs::vm: 7 Float(4.3)
+ INFO plrs::vm: 8 "print"
+ INFO plrs::vm: 9 Integer(4)
+ INFO plrs::vm: 15 Float(4.3)
+
+ INFO plrs::vm: executing: Copy { dest: 10, src: 9 }
+ INFO plrs::vm: 1 Float(1.3)
+ INFO plrs::vm: 2 Integer(3)
+ INFO plrs::vm: 3 Float(4.3)
+ INFO plrs::vm: 4 String("Hello")
+ INFO plrs::vm: 5 String("Hello")
+ INFO plrs::vm: 6 "print"
+ INFO plrs::vm: 7 Float(4.3)
+ INFO plrs::vm: 8 "print"
+ INFO plrs::vm: 9 Integer(4)
+ INFO plrs::vm: 10 Integer(4)
+ INFO plrs::vm: 15 Float(4.3)
+
+ INFO plrs::vm: executing: LoadFunction { dest: 11, src: 1 }
+ INFO plrs::vm: 1 Float(1.3)
+ INFO plrs::vm: 2 Integer(3)
+ INFO plrs::vm: 3 Float(4.3)
+ INFO plrs::vm: 4 String("Hello")
+ INFO plrs::vm: 5 String("Hello")
+ INFO plrs::vm: 6 "print"
+ INFO plrs::vm: 7 Float(4.3)
+ INFO plrs::vm: 8 "print"
+ INFO plrs::vm: 9 Integer(4)
+ INFO plrs::vm: 10 Integer(4)
+ INFO plrs::vm: 11 "test"
+ INFO plrs::vm: 15 Float(4.3)
+
+ INFO plrs::vm: executing: CallFunction { src: 11, args: 10..11 }
+ INFO plrs::vm: executing: LoadLiteral { dest: 2, src: 2 }
+ INFO plrs::vm: 1 Integer(4)
+ INFO plrs::vm: 2 Float(1.3)
+
+ INFO plrs::vm: executing: Add { dest: 3, lhs: 2, rhs: 1 }
+ INFO plrs::vm: 1 Integer(4)
+ INFO plrs::vm: 2 Float(1.3)
+ INFO plrs::vm: 3 Float(5.3)
+
+ INFO plrs::vm: executing: LoadLiteral { dest: 4, src: 0 }
+ INFO plrs::vm: 1 Integer(4)
+ INFO plrs::vm: 2 Float(1.3)
+ INFO plrs::vm: 3 Float(5.3)
+ INFO plrs::vm: 4 Integer(3)
+
+ INFO plrs::vm: executing: Add { dest: 5, lhs: 3, rhs: 4 }
+ INFO plrs::vm: 1 Integer(4)
+ INFO plrs::vm: 2 Float(1.3)
+ INFO plrs::vm: 3 Float(5.3)
+ INFO plrs::vm: 4 Integer(3)
+ INFO plrs::vm: 5 Float(8.3)
+
+ INFO plrs::vm: executing: LoadLiteral { dest: 6, src: 3 }
+ INFO plrs::vm: 1 Integer(4)
+ INFO plrs::vm: 2 Float(1.3)
+ INFO plrs::vm: 3 Float(5.3)
+ INFO plrs::vm: 4 Integer(3)
+ INFO plrs::vm: 5 Float(8.3)
+ INFO plrs::vm: 6 Integer(2)
+
+ INFO plrs::vm: executing: Add { dest: 7, lhs: 3, rhs: 6 }
+ INFO plrs::vm: 1 Integer(4)
+ INFO plrs::vm: 2 Float(1.3)
+ INFO plrs::vm: 3 Float(5.3)
+ INFO plrs::vm: 4 Integer(3)
+ INFO plrs::vm: 5 Float(8.3)
+ INFO plrs::vm: 6 Integer(2)
+ INFO plrs::vm: 7 Float(7.3)
+
+ INFO plrs::vm: executing: Return
+ INFO plrs::vm: executing: Copy { dest: 12, src: 3 }
+ INFO plrs::vm: 1 Float(1.3)
+ INFO plrs::vm: 2 Integer(3)
+ INFO plrs::vm: 3 Float(4.3)
+ INFO plrs::vm: 4 String("Hello")
+ INFO plrs::vm: 5 String("Hello")
+ INFO plrs::vm: 6 "print"
+ INFO plrs::vm: 7 Float(4.3)
+ INFO plrs::vm: 8 "print"
+ INFO plrs::vm: 9 Integer(4)
+ INFO plrs::vm: 10 Integer(4)
+ INFO plrs::vm: 11 "test"
+ INFO plrs::vm: 12 Float(4.3)
+ INFO plrs::vm: 15 Integer(4)
+ INFO plrs::vm: 16 Float(1.3)
+ INFO plrs::vm: 17 Float(5.3)
+ INFO plrs::vm: 18 Integer(3)
+ INFO plrs::vm: 19 Float(8.3)
+ INFO plrs::vm: 20 Integer(2)
+ INFO plrs::vm: 21 Float(7.3)
+
+ INFO plrs::vm: executing: LoadFunction { dest: 13, src: 0 }
+ INFO plrs::vm: 1 Float(1.3)
+ INFO plrs::vm: 2 Integer(3)
+ INFO plrs::vm: 3 Float(4.3)
+ INFO plrs::vm: 4 String("Hello")
+ INFO plrs::vm: 5 String("Hello")
+ INFO plrs::vm: 6 "print"
+ INFO plrs::vm: 7 Float(4.3)
+ INFO plrs::vm: 8 "print"
+ INFO plrs::vm: 9 Integer(4)
+ INFO plrs::vm: 10 Integer(4)
+ INFO plrs::vm: 11 "test"
+ INFO plrs::vm: 12 Float(4.3)
+ INFO plrs::vm: 13 "print"
+ INFO plrs::vm: 15 Integer(4)
+ INFO plrs::vm: 16 Float(1.3)
+ INFO plrs::vm: 17 Float(5.3)
+ INFO plrs::vm: 18 Integer(3)
+ INFO plrs::vm: 19 Float(8.3)
+ INFO plrs::vm: 20 Integer(2)
+ INFO plrs::vm: 21 Float(7.3)
+
+ INFO plrs::vm: executing: CallFunction { src: 13, args: 12..13 }
+ INFO plrs::vm: executing: Return
+ INFO plrs::vm: executing: Return

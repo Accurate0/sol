@@ -1,16 +1,25 @@
 use crate::{
     ast::{self, Literal, Statement},
     instructions::{FunctionId, Instruction, LiteralId, Register},
+    parser::ParserError,
     scope::{Scope, ScopeType},
 };
 use std::{cell::RefCell, rc::Rc};
 use thiserror::Error;
 
+impl From<ParserError> for CompilerError {
+    fn from(value: ParserError) -> Self {
+        CompilerError::ParserError { source: value }
+    }
+}
+
 #[derive(Debug, Error)]
 pub enum CompilerError {
+    #[error("parser error: {source}")]
+    ParserError { source: ParserError },
     #[error("Unknown error")]
     UnknownError,
-    #[error("{0} not found in scope", variable)]
+    #[error("variable '{0}' not found in scope", variable)]
     VariableNotFound { variable: String },
 }
 
@@ -32,7 +41,7 @@ pub struct Function {
 #[derive(Debug)]
 pub struct Compiler<I>
 where
-    I: Iterator<Item = Statement>,
+    I: Iterator<Item = Result<Statement, ParserError>>,
 {
     parser: I,
     scope_stack: Vec<Scope>,
@@ -45,7 +54,7 @@ where
 
 impl<I> Compiler<I>
 where
-    I: Iterator<Item = Statement>,
+    I: Iterator<Item = Result<Statement, ParserError>>,
 {
     // wtf
     pub fn new(parser: I) -> Self {
@@ -63,7 +72,7 @@ where
 
     pub fn compile(mut self) -> Result<CompiledProgram, CompilerError> {
         while let Some(statement) = self.parser.next() {
-            self.compile_statement(&statement)?;
+            self.compile_statement(&statement?)?;
         }
 
         drop(self.current_code);
