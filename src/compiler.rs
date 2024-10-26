@@ -15,12 +15,14 @@ impl From<ParserError> for CompilerError {
 
 #[derive(Debug, Error)]
 pub enum CompilerError {
-    #[error("parser error: {source}")]
+    #[error("{source}")]
     ParserError { source: ParserError },
-    #[error("Unknown error")]
+    #[error("unknown error")]
     UnknownError,
     #[error("variable '{0}' not found in scope", variable)]
     VariableNotFound { variable: String },
+    #[error("variable '{0}' is not mutable", variable)]
+    MutationNotAllowed { variable: String },
 }
 
 #[derive(Default, Debug, PartialEq)]
@@ -93,9 +95,25 @@ where
         self.scope_stack.push(Scope::new(ScopeType::Local));
     }
 
-    fn define_current_scope(&mut self, name: &str, register: Register) {
+    fn define_immutable_current_scope(&mut self, name: &str, register: Register) {
         let current_scope = self.scope_stack.last_mut().unwrap();
-        current_scope.define(name, register);
+        current_scope.define_immutable(name, register);
+    }
+
+    fn define_mutable_current_scope(&mut self, name: &str, register: Register) {
+        let current_scope = self.scope_stack.last_mut().unwrap();
+        current_scope.define_mutable(name, register);
+    }
+
+    fn can_mutate_variable(&mut self, name: &str) -> bool {
+        let scope_stack = &mut self.scope_stack.iter().rev();
+        for v in scope_stack {
+            if v.contains(name).is_some() {
+                return v.is_mutable(name).is_some_and(|m| m);
+            }
+        }
+
+        false
     }
 
     fn resolve(&mut self, name: &str) -> Option<Register> {
@@ -127,7 +145,7 @@ where
         let prev_code = self.current_code.replace(Vec::new());
 
         for arg_name in &func.parameters {
-            self.define_current_scope(arg_name, self.next_available_register);
+            self.define_immutable_current_scope(arg_name, self.next_available_register);
             self.next_available_register += 1;
         }
 
@@ -157,11 +175,38 @@ where
         Ok(())
     }
 
-    fn compile_let(&mut self, name: &str, value: &ast::Expression) -> Result<(), CompilerError> {
+    fn compile_let(
+        &mut self,
+        name: &str,
+        value: &ast::Expression,
+        is_mutable: bool,
+    ) -> Result<(), CompilerError> {
         let expression_value_register = self.compile_expression(value)?;
-        self.define_current_scope(name, expression_value_register);
+        if is_mutable {
+            self.define_mutable_current_scope(name, expression_value_register);
+        } else {
+            self.define_immutable_current_scope(name, expression_value_register);
+        }
 
         Ok(())
+    }
+
+    fn compile_let_mutation(
+        &mut self,
+        name: &str,
+        value: &ast::Expression,
+    ) -> Result<(), CompilerError> {
+        let can_mutate = self.can_mutate_variable(name);
+        if can_mutate {
+            let expression_value_register = self.compile_expression(value)?;
+            self.define_mutable_current_scope(name, expression_value_register);
+
+            Ok(())
+        } else {
+            Err(CompilerError::MutationNotAllowed {
+                variable: name.to_owned(),
+            })
+        }
     }
 
     fn compile_expression(&mut self, expr: &ast::Expression) -> Result<Register, CompilerError> {
@@ -287,8 +332,14 @@ where
     #[allow(unused)]
     pub fn compile_statement(&mut self, statement: &Statement) -> Result<(), CompilerError> {
         match statement {
-            Statement::Const { name, value } => todo!(),
-            Statement::Let { name, value } => self.compile_let(name, value)?,
+            // kinda sus?
+            Statement::Const { name, value } => self.compile_let(name, value, false)?,
+            Statement::Let {
+                name,
+                value,
+                is_mutable,
+            } => self.compile_let(name, value, *is_mutable)?,
+            Statement::LetMutation { name, value } => self.compile_let_mutation(name, value)?,
             Statement::If {
                 condition,
                 body,

@@ -32,6 +32,11 @@ pub enum Statement {
     Let {
         name: String,
         value: Box<Expression>,
+        is_mutable: bool,
+    },
+    LetMutation {
+        name: String,
+        value: Box<Expression>,
     },
     If {
         condition: Box<Expression>,

@@ -2,4 +2,4 @@
 source: tests/integration.rs
 expression: output
 ---
-ERROR plrs: parser error: unexpected token: EndOfFile - <0, 0>, line: 0,  in function parse_expression + rhs
+ERROR plrs: unexpected token: EndOfFile - <0, 0>, line: 0,  in function parse_expression + rhs

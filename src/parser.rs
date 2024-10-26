@@ -103,7 +103,16 @@ where
     }
 
     fn parse_let(&mut self) -> Result<ast::Statement, ParserError> {
+        let maybe_mutable_token = self.peek_token();
+        let has_mutable_token = *maybe_mutable_token.kind() == TokenKind::Identifier
+            && self.text(&maybe_mutable_token) == "mut";
+
+        if has_mutable_token {
+            self.consume(TokenKind::Identifier)?;
+        }
+
         let variable_name = self.consume(TokenKind::Identifier)?;
+
         self.consume(TokenKind::Eq)?;
 
         let expression = self.parse_expression(0)?;
@@ -111,6 +120,19 @@ where
 
         Ok(ast::Statement::Let {
             name: self.text(&variable_name).to_owned(),
+            value: expression.into(),
+            is_mutable: has_mutable_token,
+        })
+    }
+
+    fn parse_let_mutation(&mut self, name: &str) -> Result<ast::Statement, ParserError> {
+        self.consume(TokenKind::Eq)?;
+
+        let expression = self.parse_expression(0)?;
+        self.consume(TokenKind::EndOfLine)?;
+
+        Ok(ast::Statement::LetMutation {
+            name: name.to_owned(),
             value: expression.into(),
         })
     }
@@ -244,6 +266,7 @@ where
             name if self.peek() == TokenKind::OpenParen => Ok(ast::Statement::Expression(
                 self.parse_function_call(name, true)?,
             )),
+            name if self.peek() == TokenKind::Eq => self.parse_let_mutation(name),
             name => Ok(ast::Statement::Expression(self.parse_variable(name)?)),
         }
     }
@@ -543,10 +566,12 @@ fn new_function(arg1, arg2, arg3) {
                             Statement::Let {
                                 name: "x".to_owned(),
                                 value: Expression::Literal(Literal::Integer(2)).into(),
+                                is_mutable: false,
                             },
                             Statement::Let {
                                 name: "y".to_owned(),
                                 value: Expression::Literal(Literal::Boolean(true)).into(),
+                                is_mutable: false,
                             },
                             Statement::Expression(Expression::FunctionCall {
                                 name: "print".to_owned(),
@@ -658,6 +683,7 @@ fn new_function(arg1, arg2, arg3) {
                             }),
                         }
                         .into(),
+                        is_mutable: false,
                     },]
                 }
                 .into()
@@ -703,6 +729,7 @@ fn new_function(arg1, arg2, arg3) {
                             op: Operator::Plus,
                         }
                         .into(),
+                        is_mutable: false,
                     },]
                 }
                 .into()
@@ -747,6 +774,7 @@ fn new_function(arg1, arg2, arg3) {
                         body: vec![Statement::Let {
                             name: "a".to_owned(),
                             value: Expression::Literal(Literal::String("hello".to_owned())).into(),
+                            is_mutable: false,
                         }]
                     }
                     .into()
@@ -792,7 +820,8 @@ fn new_function(arg1, arg2, arg3) {
                                 name: "test2".to_owned(),
                                 args: vec![]
                             }
-                            .into()
+                            .into(),
+                            is_mutable: false,
                         },]
                     }
                     .into()
@@ -887,7 +916,8 @@ fn new_function(arg1, arg2, arg3) {
                                 .into(),
                                 rhs: Expression::Literal(Literal::Integer(1)).into()
                             }
-                            .into()
+                            .into(),
+                            is_mutable: false,
                         },]
                     }
                     .into()
@@ -933,7 +963,8 @@ fn new_function(arg1, arg2, arg3) {
                     body: vec![
                         Statement::Let {
                             name: "x".to_owned(),
-                            value: Expression::Literal(Literal::Integer(1)).into()
+                            value: Expression::Literal(Literal::Integer(1)).into(),
+                            is_mutable: false,
                         },
                         Statement::Let {
                             name: "z".to_owned(),
@@ -942,7 +973,8 @@ fn new_function(arg1, arg2, arg3) {
                                 lhs: Expression::Literal(Literal::Integer(2)).into(),
                                 rhs: Expression::Variable("x".to_owned()).into(),
                             }
-                            .into()
+                            .into(),
+                            is_mutable: false,
                         },
                         Statement::Let {
                             name: "y".to_owned(),
@@ -951,7 +983,8 @@ fn new_function(arg1, arg2, arg3) {
                                 lhs: Expression::Variable("x".to_owned()).into(),
                                 rhs: Expression::Literal(Literal::Integer(3)).into()
                             }
-                            .into()
+                            .into(),
+                            is_mutable: false,
                         },
                         Statement::Let {
                             name: "r".to_owned(),
@@ -960,8 +993,58 @@ fn new_function(arg1, arg2, arg3) {
                                 lhs: Expression::Variable("x".to_owned()).into(),
                                 rhs: Expression::Variable("z".to_owned()).into(),
                             }
-                            .into()
+                            .into(),
+                            is_mutable: false,
                         }
+                    ]
+                }
+                .into()
+            ))],
+            statements,
+        )
+    }
+
+    #[test]
+    fn variable_mutation() {
+        let input = r#"
+        fn test() {
+            let x = 1;
+            x = 2 + x;
+        }
+        "#
+        .to_owned();
+
+        let mut lexer = Lexer::new(&input);
+        let parser = Parser::new(&mut lexer, &input);
+        let statements = parser.collect::<Vec<_>>();
+
+        assert!(statements.iter().all(|s| s.is_ok()));
+
+        let statements = statements
+            .into_iter()
+            .map(|s| s.unwrap())
+            .collect::<Vec<_>>();
+
+        assert_eq!(
+            vec![Statement::Function(Function::new(
+                "test".to_owned(),
+                vec![],
+                Statement::Block {
+                    body: vec![
+                        Statement::Let {
+                            name: "x".to_owned(),
+                            value: Expression::Literal(Literal::Integer(1)).into(),
+                            is_mutable: false,
+                        },
+                        Statement::LetMutation {
+                            name: "x".to_owned(),
+                            value: Expression::Infix {
+                                op: Operator::Plus,
+                                lhs: Expression::Literal(Literal::Integer(2)).into(),
+                                rhs: Expression::Variable("x".to_owned()).into(),
+                            }
+                            .into(),
+                        },
                     ]
                 }
                 .into()

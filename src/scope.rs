@@ -4,6 +4,7 @@ use std::{cell::RefCell, collections::HashMap};
 #[derive(Debug)]
 pub struct Value {
     pub register: Register,
+    pub is_mutable: bool,
 }
 
 #[derive(Debug, PartialEq)]
@@ -32,13 +33,31 @@ impl Scope {
         self.r#type == ScopeType::Global
     }
 
-    pub fn define(&self, name: &str, register: Register) {
-        self.symbols
-            .borrow_mut()
-            .insert(name.to_owned(), Value { register });
+    pub fn define_immutable(&self, name: &str, register: Register) {
+        self.symbols.borrow_mut().insert(
+            name.to_owned(),
+            Value {
+                register,
+                is_mutable: false,
+            },
+        );
+    }
+
+    pub fn define_mutable(&self, name: &str, register: Register) {
+        self.symbols.borrow_mut().insert(
+            name.to_owned(),
+            Value {
+                register,
+                is_mutable: true,
+            },
+        );
     }
 
     pub fn contains(&self, name: &str) -> Option<Register> {
         self.symbols.borrow().get(name).map(|v| v.register)
+    }
+
+    pub fn is_mutable(&self, name: &str) -> Option<bool> {
+        self.symbols.borrow().get(name).map(|v| v.is_mutable)
     }
 }

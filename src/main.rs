@@ -5,7 +5,7 @@ use std::{
     process::ExitCode,
 };
 
-use clap::{Parser as _, Subcommand};
+use clap::{Parser as _, Subcommand, ValueEnum};
 use compiler::Compiler;
 use lexer::Lexer;
 use parser::Parser;
@@ -30,7 +30,40 @@ struct Args {
 
 #[derive(Subcommand, Debug, Clone)]
 enum Commands {
-    Run { file: String },
+    Run {
+        file: String,
+    },
+    Dump {
+        file: String,
+        #[arg(short, long, default_value_t, value_enum)]
+        item: ItemToDump,
+    },
+}
+
+#[derive(ValueEnum, Clone, Default, Debug)]
+enum ItemToDump {
+    /// tokens from the lexer
+    #[default]
+    Tokens,
+    /// parsed ast
+    Ast,
+}
+
+fn read_file_to_string(path_unchecked: &str) -> Result<String, std::io::Error> {
+    let path = Path::new(&path_unchecked);
+    if !path.exists() {
+        return Err(io::Error::new(
+            ErrorKind::NotFound,
+            format!("{} does not exist", path_unchecked),
+        ));
+    }
+
+    let mut file = File::open(path)?;
+    let mut buffer = String::new();
+
+    file.read_to_string(&mut buffer)?;
+
+    Ok(buffer)
 }
 
 fn main() -> ExitCode {
@@ -49,19 +82,8 @@ fn main() -> ExitCode {
 
     let main_internal = || match args.command {
         Commands::Run { file } => {
-            let path = Path::new(&file);
-            if !path.exists() {
-                return Err(io::Error::new(
-                    ErrorKind::NotFound,
-                    format!("{} does not exist", file),
-                )
-                .into());
-            }
+            let buffer = read_file_to_string(&file)?;
 
-            let mut file = File::open(path)?;
-            let mut buffer = String::new();
-
-            file.read_to_string(&mut buffer)?;
             let mut lexer = Lexer::new(&buffer);
             let mut parser = Parser::new(&mut lexer, &buffer);
             let compiler = Compiler::new(&mut parser);
@@ -72,6 +94,19 @@ fn main() -> ExitCode {
             let vm = VM::new(program);
 
             vm.run()?;
+
+            Ok::<(), Box<dyn std::error::Error>>(())
+        }
+        Commands::Dump { file, item } => {
+            let buffer = read_file_to_string(&file)?;
+
+            match item {
+                ItemToDump::Tokens => {
+                    let tokens = Lexer::new(&buffer).collect::<Vec<_>>();
+                    tracing::info!("{:#?}", tokens);
+                }
+                ItemToDump::Ast => todo!(),
+            }
 
             Ok::<(), Box<dyn std::error::Error>>(())
         }

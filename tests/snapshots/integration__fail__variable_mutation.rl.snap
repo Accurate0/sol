@@ -1,0 +1,5 @@
+---
+source: tests/integration.rs
+expression: output
+---
+ERROR plrs: variable 'x' is not mutable
