@@ -16,8 +16,6 @@ fn main(argv) {
     print(2);
 
     test();
-
-    let new_var = test;
 }
 
 fn test(){

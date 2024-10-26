@@ -2,6 +2,9 @@ let x = 3;
 let y = 4;
 let z = x + y;
 
+fn print() {
+}
+
 fn test(a) {
     let y = 1.3 + a;
     print("y: ", y);

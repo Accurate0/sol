@@ -2,27 +2,4 @@
 source: tests/integration.rs
 expression: output
 ---
- INFO plrs: CompiledProgram {
-    functions: [],
-    global_code: [
-        LoadLiteral {
-            dest: 1,
-            src: 0,
-        },
-        PrefixNot {
-            dest: 2,
-            rhs: 1,
-        },
-    ],
-    global_register_count: 3,
-    literals: [
-        Integer(
-            1,
-        ),
-    ],
-}
- INFO plrs::vm: executing: LoadLiteral { dest: 1, src: 0 }
- INFO plrs::vm: 1 Integer(1)
-
- INFO plrs::vm: executing: PrefixNot { dest: 2, rhs: 1 }
 ERROR plrs: cannot use '!' on non boolean type

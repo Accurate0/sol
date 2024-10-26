@@ -1,5 +1,5 @@
 use crate::{
-    ast::{self, Literal, Statement},
+    ast::{self, Expression, Literal, Statement},
     instructions::{FunctionId, Instruction, LiteralId, Register},
     parser::ParserError,
     scope::{Scope, ScopeType},
@@ -305,15 +305,6 @@ where
                     }
                 }
 
-                let found_id = match found_id {
-                    Some(f) => (self.functions.len() - f - 1) as FunctionId,
-                    _ => {
-                        return Err(CompilerError::GeneralError {
-                            cause: "function must exist".to_owned(),
-                        })
-                    }
-                };
-
                 let mut regs = vec![];
                 for arg in args {
                     regs.push(self.compile_expression(arg)?);
@@ -327,6 +318,26 @@ where
                 }
 
                 let last_reg = self.next_available_register;
+
+                let found_id = match found_id {
+                    Some(f) => (self.functions.len() - f - 1) as FunctionId,
+                    _ => {
+                        // if no existing function, assume there is a native function
+                        // available in the VM, this is now a runtime error if it doesn't exist
+                        let register = self.compile_expression(&Expression::Literal(
+                            Literal::String(function_to_call.to_owned()),
+                        ))?;
+
+                        let instruction = Instruction::CallNativeFunction {
+                            src: register,
+                            args: start_reg..last_reg,
+                        };
+
+                        self.current_code.borrow_mut().push(instruction);
+
+                        return Ok(register);
+                    }
+                };
 
                 let reg = self.get_register();
                 let instruction = Instruction::LoadFunction {
@@ -378,9 +389,7 @@ where
             } => todo!(),
             Statement::Block { body } => self.compile_block(body)?,
             Statement::Function(func) => self.compile_function(func)?,
-            Statement::Expression(expr) => {
-                self.compile_expression(expr);
-            }
+            Statement::Expression(expr) => self.compile_expression(expr).map(|_| ())?,
         }
 
         Ok(())

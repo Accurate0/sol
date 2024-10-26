@@ -23,6 +23,7 @@ mod scope;
 mod vm;
 
 // TODO: Add basic type checking - should be done in same pass as parser?
+// TODO: Functions need to return values, by placing in 0th register - this needs to be compiled
 
 #[derive(clap::Parser, Debug)]
 #[command(version, about, long_about = None)]
@@ -50,6 +51,8 @@ enum ItemToDump {
     Tokens,
     /// parsed ast
     Ast,
+    /// compiled bytecode
+    Bytecode,
 }
 
 fn read_file_to_string(path_unchecked: &str) -> Result<String, std::io::Error> {
@@ -92,9 +95,22 @@ fn main() -> ExitCode {
             let compiler = Compiler::new(&mut parser);
 
             let program = compiler.compile()?;
-            tracing::info!("{:#?}", program);
 
-            let vm = VM::new(program);
+            let mut vm = VM::new(program);
+
+            vm.define_native_function("print".to_owned(), |args: Vec<vm::RegisterValue<'_>>| {
+                for arg in args {
+                    match arg {
+                        vm::RegisterValue::Empty => continue,
+                        vm::RegisterValue::Literal(literal) => print!("{}", literal.as_ref()),
+                        vm::RegisterValue::Function(f) => {
+                            print!("function: {} <{}>", f.name, f.code.len())
+                        }
+                    }
+                }
+
+                println!();
+            });
 
             vm.run()?;
 
@@ -108,7 +124,21 @@ fn main() -> ExitCode {
                     let tokens = Lexer::new(&buffer).collect::<Vec<_>>();
                     tracing::info!("{:#?}", tokens);
                 }
-                ItemToDump::Ast => todo!(),
+                ItemToDump::Ast => {
+                    let mut lexer = Lexer::new(&buffer);
+                    let parser = Parser::new(&mut lexer, &buffer);
+
+                    let ast = parser.flatten().collect::<Vec<_>>();
+                    tracing::info!("{:#?}", ast);
+                }
+                ItemToDump::Bytecode => {
+                    let mut lexer = Lexer::new(&buffer);
+                    let mut parser = Parser::new(&mut lexer, &buffer);
+                    let compiler = Compiler::new(&mut parser);
+
+                    let program = compiler.compile()?;
+                    tracing::info!("{:#?}", program);
+                }
             }
 
             Ok::<(), Box<dyn std::error::Error>>(())

@@ -27,8 +27,16 @@ pub enum RegisterValue<'a> {
     Function(&'a Function),
 }
 
+type NativeFunctionType = fn(Vec<RegisterValue>);
+
+struct NativeFunction {
+    name: String,
+    function: NativeFunctionType,
+}
+
 pub struct VM {
     functions: Vec<Function>,
+    native_functions: Vec<NativeFunction>,
     global_code: Vec<Instruction>,
     global_register_count: u8,
     literals: Vec<ast::Literal>,
@@ -38,18 +46,24 @@ impl VM {
     pub fn new(compiled_program: CompiledProgram) -> Self {
         Self {
             functions: compiled_program.functions,
+            native_functions: Default::default(),
             global_code: compiled_program.global_code,
             global_register_count: compiled_program.global_register_count,
             literals: compiled_program.literals,
         }
     }
 
+    pub fn define_native_function(&mut self, name: String, function: NativeFunctionType) {
+        self.native_functions
+            .push(NativeFunction { name, function });
+    }
+
     fn print_registers(window: &[RegisterValue]) {
         for (i, item) in window.iter().enumerate() {
             match item {
                 RegisterValue::Empty => {}
-                RegisterValue::Literal(l) => tracing::info!("{i} {:?}", l),
-                RegisterValue::Function(f) => tracing::info!("{i} {:?}", f.name),
+                RegisterValue::Literal(l) => tracing::debug!("{i} {:?}", l),
+                RegisterValue::Function(f) => tracing::debug!("{i} {:?}", f.name),
             }
         }
     }
@@ -70,7 +84,7 @@ impl VM {
             }
 
             let current_instruction = &current_code[ip];
-            tracing::info!("executing: {:?}", current_instruction);
+            tracing::debug!("executing: {:?}", current_instruction);
             // tracing::info!("ip: {:?}", ip);
             // tracing::info!("code: {:?}", current_code);
             // tracing::info!("reg: {:?}", register_window);
@@ -87,6 +101,7 @@ impl VM {
 
                         register_window = &mut registers[base_register..];
 
+                        // TODO: return value
                         ip = saved_call_frame.ip + 1;
                         current_code = saved_call_frame.code;
                         continue;
@@ -95,6 +110,48 @@ impl VM {
                 Instruction::LoadFunction { dest, src } => {
                     let func = &self.functions[*src as usize];
                     register_window[*dest as usize] = RegisterValue::Function(func);
+                }
+                Instruction::CallNativeFunction { src, args } => {
+                    let register = &register_window[*src as usize];
+                    let function_name = match register {
+                        RegisterValue::Literal(cow) => match cow.as_ref() {
+                            Literal::String(s) => s,
+                            _ => {
+                                return Err(ExecutionError::InvalidOperation {
+                                    cause: "native function name must be string value".to_owned(),
+                                })
+                            }
+                        },
+
+                        _ => {
+                            return Err(ExecutionError::InvalidOperation {
+                                cause: "native function name must be a literal".to_owned(),
+                            })
+                        }
+                    };
+
+                    let native_function = self
+                        .native_functions
+                        .iter()
+                        .find(|f| f.name == *function_name);
+
+                    if native_function.is_none() {
+                        return Err(ExecutionError::InvalidOperation {
+                            cause: "no matching native function called".to_owned(),
+                        });
+                    }
+
+                    let native_function = native_function.unwrap();
+                    let arg_start = args.start as usize;
+                    let arg_end = args.end as usize;
+                    let mut arg_values = Vec::with_capacity(arg_end - arg_start);
+                    let registers_to_copy = &register_window[arg_start..arg_end];
+                    for register in registers_to_copy {
+                        arg_values.push(register.clone());
+                    }
+
+                    // TODO: return value?
+                    (native_function.function)(arg_values);
                 }
                 Instruction::CallFunction { src, args } => {
                     let func = &register_window[*src as usize];
@@ -235,7 +292,7 @@ impl VM {
             }
 
             Self::print_registers(register_window);
-            println!();
+            tracing::debug!("");
 
             ip += 1;
         }

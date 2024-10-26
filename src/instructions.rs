@@ -14,6 +14,10 @@ pub enum Instruction {
         dest: Register,
         src: FunctionId,
     },
+    CallNativeFunction {
+        src: Register,
+        args: Range<Register>,
+    },
     CallFunction {
         src: Register,
         args: Range<Register>,

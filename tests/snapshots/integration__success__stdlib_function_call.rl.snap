@@ -2,6 +2,6 @@
 source: tests/integration.rs
 expression: output
 ---
-x: 1
-x after mutation: 2
-y: 5
+2
+1
+2
