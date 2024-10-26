@@ -85,7 +85,7 @@ impl VM {
         }
     }
 
-    pub fn run(&self) -> Result<(), ExecutionError> {
+    pub fn run_with_registers_returned(&self) -> Result<Vec<RegisterValue>, ExecutionError> {
         let mut registers = Vec::<RegisterValue>::with_capacity(u8::MAX as usize);
         registers.resize_with(u8::MAX as usize, Default::default);
 
@@ -220,6 +220,10 @@ impl VM {
 
         // dbg!(registers);
 
-        Ok(())
+        Ok(registers)
+    }
+
+    pub fn run(&self) -> Result<(), ExecutionError> {
+        self.run_with_registers_returned().map(|_| ())
     }
 }
