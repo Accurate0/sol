@@ -10,10 +10,10 @@ pub static STANDARD_LIBRARY: phf::Map<&'static str, NativeFunctionType> = phf_ma
 fn print(args: Vec<RegisterValue>) {
     for arg in args {
         match arg {
-            vm::RegisterValue::Empty => continue,
+            vm::RegisterValue::Empty => print!("<empty>"),
             vm::RegisterValue::Literal(literal) => print!("{}", literal.as_ref()),
             vm::RegisterValue::Function(f) => {
-                print!("function: {} <{}>", f.name, f.code.len())
+                print!("<function: {} - code len: {}>", f.name, f.code.len())
             }
         }
     }
