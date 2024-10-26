@@ -1,0 +1,17 @@
+---
+source: tests/lexer.rs
+expression: tokens
+---
+[
+    Identifier - <13, 18>, line: 2,
+    Identifier - <19, 22>, line: 2,
+    Eq - <23, 24>, line: 2,
+    Literal - <25, 26>, line: 2,
+    EndOfLine - <26, 27>, line: 2,
+    Identifier - <40, 42>, line: 3,
+    Identifier - <43, 47>, line: 3,
+    OpenParen - <47, 48>, line: 3,
+    CloseParen - <48, 49>, line: 3,
+    OpenBrace - <50, 51>, line: 3,
+    CloseBrace - <51, 52>, line: 3,
+]
