@@ -3,6 +3,7 @@ use std::{
     io::{self, ErrorKind, Read},
     path::Path,
     process::ExitCode,
+    str::FromStr,
 };
 
 use clap::{Parser as _, Subcommand, ValueEnum};
@@ -75,8 +76,13 @@ fn read_file_to_string(path_unchecked: &str) -> Result<String, std::io::Error> {
 
 fn main() -> ExitCode {
     let no_color = std::env::var("NO_COLOR").is_ok_and(|v| !v.is_empty());
+    let log_level = match std::env::var("PLRS_LOG").ok() {
+        Some(l) => Level::from_str(&l).unwrap_or(Level::INFO),
+        None => Level::INFO,
+    };
+
     tracing_subscriber::registry()
-        .with(Targets::default().with_default(Level::INFO))
+        .with(Targets::default().with_default(log_level))
         .with(
             tracing_subscriber::fmt::layer()
                 .without_time()
