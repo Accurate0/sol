@@ -24,8 +24,10 @@ mod scope;
 mod stdlib;
 mod vm;
 
-// TODO: Add basic type checking - should be done in same pass as parser?
+// TODO: Add support for testing and conditional jumps aka 'if' statements
 // TODO: Functions need to return values, by placing in 0th register - this needs to be compiled
+// TODO: Add basic type checking - should be done in same pass as parser?
+// TODO: Better dump printing
 
 #[derive(clap::Parser, Debug)]
 #[command(version, about, long_about = None)]
@@ -74,26 +76,10 @@ fn read_file_to_string(path_unchecked: &str) -> Result<String, std::io::Error> {
     Ok(buffer)
 }
 
-fn main() -> ExitCode {
-    let no_color = std::env::var("NO_COLOR").is_ok_and(|v| !v.is_empty());
-    let log_level = match std::env::var("PLRS_LOG").ok() {
-        Some(l) => Level::from_str(&l).unwrap_or(Level::INFO),
-        None => Level::INFO,
-    };
-
-    tracing_subscriber::registry()
-        .with(Targets::default().with_default(log_level))
-        .with(
-            tracing_subscriber::fmt::layer()
-                .without_time()
-                .with_ansi(!no_color)
-                .compact(),
-        )
-        .init();
-
+fn main_internal() -> Result<(), Box<dyn std::error::Error>> {
     let args = Args::parse();
 
-    let main_internal = || match args.command {
+    match args.command {
         Commands::Run { file } => {
             let buffer = read_file_to_string(&file)?;
 
@@ -106,8 +92,6 @@ fn main() -> ExitCode {
             let vm = VM::new(program);
 
             vm.run()?;
-
-            Ok::<(), Box<dyn std::error::Error>>(())
         }
         Commands::Dump { file, item } => {
             let buffer = read_file_to_string(&file)?;
@@ -133,10 +117,28 @@ fn main() -> ExitCode {
                     tracing::info!("{:#?}", program);
                 }
             }
-
-            Ok::<(), Box<dyn std::error::Error>>(())
         }
     };
+
+    Ok(())
+}
+
+fn main() -> ExitCode {
+    let no_color = std::env::var("NO_COLOR").is_ok_and(|v| !v.is_empty());
+    let log_level = match std::env::var("PLRS_LOG").ok() {
+        Some(l) => Level::from_str(&l).unwrap_or(Level::INFO),
+        None => Level::INFO,
+    };
+
+    tracing_subscriber::registry()
+        .with(Targets::default().with_default(log_level))
+        .with(
+            tracing_subscriber::fmt::layer()
+                .without_time()
+                .with_ansi(!no_color)
+                .compact(),
+        )
+        .init();
 
     match main_internal() {
         Ok(_) => ExitCode::SUCCESS,
