@@ -47,7 +47,7 @@ pub enum Statement {
         value: Box<Expression>,
         is_mutable: bool,
     },
-    LetMutation {
+    Reassignment {
         name: String,
         value: Box<Expression>,
     },

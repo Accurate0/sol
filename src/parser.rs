@@ -131,7 +131,7 @@ where
         let expression = self.parse_expression(0)?;
         self.consume(TokenKind::EndOfLine)?;
 
-        Ok(ast::Statement::LetMutation {
+        Ok(ast::Statement::Reassignment {
             name: name.to_owned(),
             value: expression.into(),
         })

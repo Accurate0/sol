@@ -218,7 +218,6 @@ where
     fn compile_expression(&mut self, expr: &ast::Expression) -> Result<Register, CompilerError> {
         // FIXME: potentially wasting registers
         match expr {
-            #[allow(unused)]
             ast::Expression::Prefix { op, expr } => {
                 let rhs = self.compile_expression(expr)?;
                 let dest = self.get_register();
@@ -376,7 +375,16 @@ where
         Ok(())
     }
 
-    #[allow(unused)]
+    #[allow(unused_variables)]
+    pub fn compile_if(
+        &mut self,
+        condition: &Expression,
+        body: &Statement,
+        else_statement: &Option<Box<Statement>>,
+    ) -> Result<(), CompilerError> {
+        todo!()
+    }
+
     pub fn compile_statement(&mut self, statement: &Statement) -> Result<(), CompilerError> {
         match statement {
             // kinda sus?
@@ -386,12 +394,12 @@ where
                 value,
                 is_mutable,
             } => self.compile_let(name, value, *is_mutable)?,
-            Statement::LetMutation { name, value } => self.compile_let_mutation(name, value)?,
+            Statement::Reassignment { name, value } => self.compile_let_mutation(name, value)?,
             Statement::If {
                 condition,
                 body,
                 else_statement,
-            } => todo!(),
+            } => self.compile_if(condition, body, else_statement)?,
             Statement::Block { body } => self.compile_block(body)?,
             Statement::Function(func) => self.compile_function(func)?,
             Statement::Expression(expr) => self.compile_expression(expr).map(|_| ())?,
