@@ -5,7 +5,7 @@ expression: tokens
 [
     Identifier - <9, 14>, line: 2,
     Identifier - <15, 18>, line: 2,
-    Eq - <19, 20>, line: 2,
+    Assignment - <19, 20>, line: 2,
     Literal - <21, 22>, line: 2,
     EndOfLine - <22, 23>, line: 2,
     Identifier - <32, 34>, line: 3,
@@ -16,7 +16,7 @@ expression: tokens
     OpenBrace - <46, 47>, line: 3,
     Identifier - <93, 96>, line: 5,
     Identifier - <97, 98>, line: 5,
-    Eq - <99, 100>, line: 5,
+    Assignment - <99, 100>, line: 5,
     Literal - <101, 108>, line: 5,
     EndOfLine - <108, 109>, line: 5,
     CloseBrace - <118, 119>, line: 6,

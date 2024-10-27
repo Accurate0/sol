@@ -320,3 +320,67 @@ fn prefix_boolean() {
 
     assert_debug_snapshot!(statements);
 }
+
+#[test]
+fn if_else_conditions() {
+    let input = r#"
+if true {
+    print("boolean constant if");
+} else {
+    print("boolean constant else");
+}
+
+if 2 == 0 {
+    print("equality if");
+} else {
+    print("equality else");
+}
+
+if 2 >= 0 {
+    print("greater than equal if");
+} else {
+    print("greater than equal else");
+}
+
+if 2 <= 0 {
+    print("less than equal if");
+} else {
+    print("less than equal else");
+}
+
+if 2 > 0 {
+    print("greater than if");
+} else {
+    print("greater than else");
+}
+
+if 2 < 0 {
+    print("less than if");
+} else {
+    print("less than else");
+}
+
+
+if false {
+    print("if");
+} else if true {
+    print("else if");
+} else {
+    print("else");
+}
+    "#
+    .to_owned();
+
+    let mut lexer = Lexer::new(&input);
+    let parser = Parser::new(&mut lexer, &input);
+    let statements = parser.collect::<Vec<_>>();
+
+    assert!(statements.iter().all(|s| s.is_ok()));
+
+    let statements = statements
+        .into_iter()
+        .map(|s| s.unwrap())
+        .collect::<Vec<_>>();
+
+    assert_debug_snapshot!(statements);
+}

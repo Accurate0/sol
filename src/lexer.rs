@@ -18,10 +18,14 @@ pub enum TokenKind {
     Subtract,
     Multiply,
     Comma,
-    Eq,
+    Assignment,
     Divide,
-    Gt,
-    Lt,
+    GreaterThan,
+    LessThan,
+    GreaterThanOrEquals,
+    LessThanOrEquals,
+    Equal,
+    NotEqual,
     Whitespace,
     EndOfLine,
     Not,
@@ -258,104 +262,75 @@ impl<'a> Cursor<'a> {
             );
         }
 
+        let single_char_span = Span {
+            start: self.current() - 1,
+            end: self.current(),
+            line: self.line,
+        };
+
         let next = next.unwrap();
         match next {
-            '=' => Token::new(
-                TokenKind::Eq,
-                Span {
-                    start: self.current() - 1,
-                    end: self.current(),
-                    line: self.line,
-                },
-            ),
-            '>' => Token::new(
-                TokenKind::Gt,
-                Span {
-                    start: self.current() - 1,
-                    end: self.current(),
-                    line: self.line,
-                },
-            ),
-            '<' => Token::new(
-                TokenKind::Lt,
-                Span {
-                    start: self.current() - 1,
-                    end: self.current(),
-                    line: self.line,
-                },
-            ),
-            '(' => Token::new(
-                TokenKind::OpenParen,
-                Span {
-                    start: self.current() - 1,
-                    end: self.current(),
-                    line: self.line,
-                },
-            ),
-            ')' => Token::new(
-                TokenKind::CloseParen,
-                Span {
-                    start: self.current() - 1,
-                    end: self.current(),
-                    line: self.line,
-                },
-            ),
-            '{' => Token::new(
-                TokenKind::OpenBrace,
-                Span {
-                    start: self.current() - 1,
-                    end: self.current(),
-                    line: self.line,
-                },
-            ),
-            '}' => Token::new(
-                TokenKind::CloseBrace,
-                Span {
-                    start: self.current() - 1,
-                    end: self.current(),
-                    line: self.line,
-                },
-            ),
-            '+' => Token::new(
-                TokenKind::Add,
-                Span {
-                    start: self.current() - 1,
-                    end: self.current(),
-                    line: self.line,
-                },
-            ),
-            '-' => Token::new(
-                TokenKind::Subtract,
-                Span {
-                    start: self.current() - 1,
-                    end: self.current(),
-                    line: self.line,
-                },
-            ),
-            '*' => Token::new(
-                TokenKind::Multiply,
-                Span {
-                    start: self.current() - 1,
-                    end: self.current(),
-                    line: self.line,
-                },
-            ),
-            ',' => Token::new(
-                TokenKind::Comma,
-                Span {
-                    start: self.current() - 1,
-                    end: self.current(),
-                    line: self.line,
-                },
-            ),
-            '!' => Token::new(
-                TokenKind::Not,
-                Span {
-                    start: self.current() - 1,
-                    end: self.current(),
-                    line: self.line,
-                },
-            ),
+            '=' if self.peek() == '=' => {
+                self.next();
+                Token::new(
+                    TokenKind::Equal,
+                    Span {
+                        start: self.current() - 2,
+                        end: self.current(),
+                        line: self.line,
+                    },
+                )
+            }
+            '=' => Token::new(TokenKind::Assignment, single_char_span),
+
+            '>' if self.peek() == '=' => {
+                self.next();
+                Token::new(
+                    TokenKind::GreaterThanOrEquals,
+                    Span {
+                        start: self.current() - 2,
+                        end: self.current(),
+                        line: self.line,
+                    },
+                )
+            }
+
+            '>' => Token::new(TokenKind::GreaterThan, single_char_span),
+            '<' if self.peek() == '=' => {
+                self.next();
+                Token::new(
+                    TokenKind::LessThanOrEquals,
+                    Span {
+                        start: self.current() - 2,
+                        end: self.current(),
+                        line: self.line,
+                    },
+                )
+            }
+            '<' => Token::new(TokenKind::LessThan, single_char_span),
+
+            '(' => Token::new(TokenKind::OpenParen, single_char_span),
+            ')' => Token::new(TokenKind::CloseParen, single_char_span),
+            '{' => Token::new(TokenKind::OpenBrace, single_char_span),
+            '}' => Token::new(TokenKind::CloseBrace, single_char_span),
+            '+' => Token::new(TokenKind::Add, single_char_span),
+            '-' => Token::new(TokenKind::Subtract, single_char_span),
+            '*' => Token::new(TokenKind::Multiply, single_char_span),
+            ',' => Token::new(TokenKind::Comma, single_char_span),
+
+            '!' if self.peek() == '=' => {
+                self.next();
+                Token::new(
+                    TokenKind::NotEqual,
+                    Span {
+                        start: self.current() - 2,
+                        end: self.current(),
+                        line: self.line,
+                    },
+                )
+            }
+            '!' => Token::new(TokenKind::Not, single_char_span),
+
             '"' => self.consume_quoted_string(),
             '/' => self.consume_comment_or_divide(),
             c @ '0'..='9' => self.consume_number(c),

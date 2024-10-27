@@ -5,7 +5,7 @@ expression: tokens
 [
     Identifier - <13, 18>, line: 2,
     Identifier - <19, 22>, line: 2,
-    Eq - <23, 24>, line: 2,
+    Assignment - <23, 24>, line: 2,
     Literal - <25, 26>, line: 2,
     EndOfLine - <26, 27>, line: 2,
     Identifier - <40, 42>, line: 3,

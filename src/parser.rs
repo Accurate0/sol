@@ -78,7 +78,7 @@ where
 
     fn parse_const(&mut self) -> Result<ast::Statement, ParserError> {
         let name = self.consume(TokenKind::Identifier)?.text(self.input);
-        self.consume(TokenKind::Eq)?;
+        self.consume(TokenKind::Assignment)?;
         // could be expr in future
         let literal = self.parse_literal()?;
 
@@ -113,7 +113,7 @@ where
 
         let variable_name = self.consume(TokenKind::Identifier)?;
 
-        self.consume(TokenKind::Eq)?;
+        self.consume(TokenKind::Assignment)?;
 
         let expression = self.parse_expression(0)?;
         self.consume(TokenKind::EndOfLine)?;
@@ -126,7 +126,7 @@ where
     }
 
     fn parse_let_mutation(&mut self, name: &str) -> Result<ast::Statement, ParserError> {
-        self.consume(TokenKind::Eq)?;
+        self.consume(TokenKind::Assignment)?;
 
         let expression = self.parse_expression(0)?;
         self.consume(TokenKind::EndOfLine)?;
@@ -157,7 +157,7 @@ where
     }
 
     fn parse_expression(&mut self, binding_power: u8) -> Result<ast::Expression, ParserError> {
-        let mut lhs = {
+        let lhs = {
             match self.peek() {
                 TokenKind::Identifier => self.parse_expression_identifier(),
                 TokenKind::OpenParen => {
@@ -203,16 +203,24 @@ where
                 TokenKind::Subtract => ast::Operator::Minus,
                 TokenKind::Multiply => ast::Operator::Multiply,
                 TokenKind::Divide => ast::Operator::Divide,
+                TokenKind::GreaterThan => ast::Operator::GreaterThan,
+                TokenKind::GreaterThanOrEquals => ast::Operator::GreaterThanOrEqual,
+                TokenKind::LessThan => ast::Operator::LessThan,
+                TokenKind::LessThanOrEquals => ast::Operator::LessThanOrEqual,
+                TokenKind::Equal => ast::Operator::Equal,
+                TokenKind::NotEqual => ast::Operator::NotEqual,
                 // these don't belong to us, leave it for someone else to consume
-                TokenKind::Comma => break,
-                TokenKind::OpenBrace => break,
-                TokenKind::CloseParen => break,
-                TokenKind::CloseBrace => break,
-                TokenKind::EndOfLine => break,
+                TokenKind::Comma => break lhs,
+                TokenKind::OpenBrace => break lhs,
+                TokenKind::CloseParen => break lhs,
+                TokenKind::CloseBrace => break lhs,
+                TokenKind::EndOfLine => break lhs,
 
+                // FIXME: invalid operators seem to infinite loop somehow here
                 _ => {
                     let peeked_token = self.peek_token();
-                    return Err(ParserError::UnexpectedToken {
+
+                    break Err(ParserError::UnexpectedToken {
                         token: peeked_token,
                         text: self.text(&peeked_token).to_owned(),
                         in_function: stringify!(parse_expression + rhs),
@@ -224,22 +232,18 @@ where
                 if left_binding_power < binding_power {
                     // previous operator has higher binding power than
                     // new one --> end of expression
-                    break;
+                    break lhs;
                 }
 
                 self.consume(token)?;
                 let rhs = self.parse_expression(right_binding_power)?;
-                lhs = Ok(ast::Expression::Infix {
+                break Ok(ast::Expression::Infix {
                     lhs: Box::new(lhs?),
                     rhs: Box::new(rhs),
                     op,
                 });
-
-                continue;
             }
         }
-
-        lhs
     }
 
     fn parse_expression_identifier(&mut self) -> Result<ast::Expression, ParserError> {
@@ -266,7 +270,7 @@ where
             name if self.peek() == TokenKind::OpenParen => Ok(ast::Statement::Expression(
                 self.parse_function_call(name, true)?,
             )),
-            name if self.peek() == TokenKind::Eq => self.parse_let_mutation(name),
+            name if self.peek() == TokenKind::Assignment => self.parse_let_mutation(name),
             name => Ok(ast::Statement::Expression(self.parse_variable(name)?)),
         }
     }
@@ -298,7 +302,15 @@ where
         let maybe_else = self.peek_token();
         let else_statement =
             if *maybe_else.kind() == TokenKind::Identifier && self.text(&maybe_else) == "else" {
-                Some(self.parse_else_statement()?)
+                self.consume(TokenKind::Identifier)?;
+
+                let maybe_if = self.peek_token();
+                if *maybe_if.kind() == TokenKind::Identifier && self.text(&maybe_if) == "if" {
+                    self.consume(TokenKind::Identifier)?;
+                    Some(self.parse_if_statement()?)
+                } else {
+                    Some(self.parse_block()?)
+                }
             } else {
                 None
             };
@@ -308,11 +320,6 @@ where
             body: block.into(),
             else_statement: else_statement.map(|s| s.into()),
         })
-    }
-
-    fn parse_else_statement(&mut self) -> Result<ast::Statement, ParserError> {
-        self.consume(TokenKind::Identifier)?;
-        self.parse_block()
     }
 
     fn parse_variable(&mut self, name: &str) -> Result<ast::Expression, ParserError> {
@@ -421,7 +428,6 @@ where
             None
         } else {
             let token = token.unwrap();
-            // tracing::info!("{}", self.text(&token));
             Some(token)
         }
     }

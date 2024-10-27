@@ -1,0 +1,358 @@
+---
+source: tests/parser.rs
+expression: statements
+---
+[
+    If {
+        condition: Literal(
+            Boolean(
+                true,
+            ),
+        ),
+        body: Block {
+            body: [
+                Expression(
+                    FunctionCall {
+                        name: "print",
+                        args: [
+                            Literal(
+                                String(
+                                    "boolean constant if",
+                                ),
+                            ),
+                        ],
+                    },
+                ),
+            ],
+        },
+        else_statement: Some(
+            Block {
+                body: [
+                    Expression(
+                        FunctionCall {
+                            name: "print",
+                            args: [
+                                Literal(
+                                    String(
+                                        "boolean constant else",
+                                    ),
+                                ),
+                            ],
+                        },
+                    ),
+                ],
+            },
+        ),
+    },
+    If {
+        condition: Infix {
+            op: Equal,
+            lhs: Literal(
+                Integer(
+                    2,
+                ),
+            ),
+            rhs: Literal(
+                Integer(
+                    0,
+                ),
+            ),
+        },
+        body: Block {
+            body: [
+                Expression(
+                    FunctionCall {
+                        name: "print",
+                        args: [
+                            Literal(
+                                String(
+                                    "equality if",
+                                ),
+                            ),
+                        ],
+                    },
+                ),
+            ],
+        },
+        else_statement: Some(
+            Block {
+                body: [
+                    Expression(
+                        FunctionCall {
+                            name: "print",
+                            args: [
+                                Literal(
+                                    String(
+                                        "equality else",
+                                    ),
+                                ),
+                            ],
+                        },
+                    ),
+                ],
+            },
+        ),
+    },
+    If {
+        condition: Infix {
+            op: GreaterThanOrEqual,
+            lhs: Literal(
+                Integer(
+                    2,
+                ),
+            ),
+            rhs: Literal(
+                Integer(
+                    0,
+                ),
+            ),
+        },
+        body: Block {
+            body: [
+                Expression(
+                    FunctionCall {
+                        name: "print",
+                        args: [
+                            Literal(
+                                String(
+                                    "greater than equal if",
+                                ),
+                            ),
+                        ],
+                    },
+                ),
+            ],
+        },
+        else_statement: Some(
+            Block {
+                body: [
+                    Expression(
+                        FunctionCall {
+                            name: "print",
+                            args: [
+                                Literal(
+                                    String(
+                                        "greater than equal else",
+                                    ),
+                                ),
+                            ],
+                        },
+                    ),
+                ],
+            },
+        ),
+    },
+    If {
+        condition: Infix {
+            op: LessThanOrEqual,
+            lhs: Literal(
+                Integer(
+                    2,
+                ),
+            ),
+            rhs: Literal(
+                Integer(
+                    0,
+                ),
+            ),
+        },
+        body: Block {
+            body: [
+                Expression(
+                    FunctionCall {
+                        name: "print",
+                        args: [
+                            Literal(
+                                String(
+                                    "less than equal if",
+                                ),
+                            ),
+                        ],
+                    },
+                ),
+            ],
+        },
+        else_statement: Some(
+            Block {
+                body: [
+                    Expression(
+                        FunctionCall {
+                            name: "print",
+                            args: [
+                                Literal(
+                                    String(
+                                        "less than equal else",
+                                    ),
+                                ),
+                            ],
+                        },
+                    ),
+                ],
+            },
+        ),
+    },
+    If {
+        condition: Infix {
+            op: GreaterThan,
+            lhs: Literal(
+                Integer(
+                    2,
+                ),
+            ),
+            rhs: Literal(
+                Integer(
+                    0,
+                ),
+            ),
+        },
+        body: Block {
+            body: [
+                Expression(
+                    FunctionCall {
+                        name: "print",
+                        args: [
+                            Literal(
+                                String(
+                                    "greater than if",
+                                ),
+                            ),
+                        ],
+                    },
+                ),
+            ],
+        },
+        else_statement: Some(
+            Block {
+                body: [
+                    Expression(
+                        FunctionCall {
+                            name: "print",
+                            args: [
+                                Literal(
+                                    String(
+                                        "greater than else",
+                                    ),
+                                ),
+                            ],
+                        },
+                    ),
+                ],
+            },
+        ),
+    },
+    If {
+        condition: Infix {
+            op: LessThan,
+            lhs: Literal(
+                Integer(
+                    2,
+                ),
+            ),
+            rhs: Literal(
+                Integer(
+                    0,
+                ),
+            ),
+        },
+        body: Block {
+            body: [
+                Expression(
+                    FunctionCall {
+                        name: "print",
+                        args: [
+                            Literal(
+                                String(
+                                    "less than if",
+                                ),
+                            ),
+                        ],
+                    },
+                ),
+            ],
+        },
+        else_statement: Some(
+            Block {
+                body: [
+                    Expression(
+                        FunctionCall {
+                            name: "print",
+                            args: [
+                                Literal(
+                                    String(
+                                        "less than else",
+                                    ),
+                                ),
+                            ],
+                        },
+                    ),
+                ],
+            },
+        ),
+    },
+    If {
+        condition: Literal(
+            Boolean(
+                false,
+            ),
+        ),
+        body: Block {
+            body: [
+                Expression(
+                    FunctionCall {
+                        name: "print",
+                        args: [
+                            Literal(
+                                String(
+                                    "if",
+                                ),
+                            ),
+                        ],
+                    },
+                ),
+            ],
+        },
+        else_statement: Some(
+            If {
+                condition: Literal(
+                    Boolean(
+                        true,
+                    ),
+                ),
+                body: Block {
+                    body: [
+                        Expression(
+                            FunctionCall {
+                                name: "print",
+                                args: [
+                                    Literal(
+                                        String(
+                                            "else if",
+                                        ),
+                                    ),
+                                ],
+                            },
+                        ),
+                    ],
+                },
+                else_statement: Some(
+                    Block {
+                        body: [
+                            Expression(
+                                FunctionCall {
+                                    name: "print",
+                                    args: [
+                                        Literal(
+                                            String(
+                                                "else",
+                                            ),
+                                        ),
+                                    ],
+                                },
+                            ),
+                        ],
+                    },
+                ),
+            },
+        ),
+    },
+]

@@ -70,6 +70,12 @@ pub enum Operator {
     Multiply,
     Not,
     Divide,
+    GreaterThan,
+    GreaterThanOrEqual,
+    LessThan,
+    LessThanOrEqual,
+    Equal,
+    NotEqual,
 }
 
 impl Operator {
@@ -84,6 +90,11 @@ impl Operator {
 
     pub fn infix_binding_power(&self) -> Option<(u8, u8)> {
         match self {
+            Self::Equal | Self::NotEqual => Some((5, 6)),
+            Self::GreaterThan
+            | Self::GreaterThanOrEqual
+            | Self::LessThan
+            | Self::LessThanOrEqual => Some((7, 8)),
             Self::Plus | Self::Minus => Some((9, 10)),
             Self::Multiply | Self::Divide => Some((11, 12)),
             _ => None,

@@ -10,7 +10,7 @@ expression: tokens
     OpenBrace - <23, 24>, line: 2,
     Identifier - <41, 44>, line: 3,
     Identifier - <45, 46>, line: 3,
-    Eq - <47, 48>, line: 3,
+    Assignment - <47, 48>, line: 3,
     OpenParen - <49, 50>, line: 3,
     Literal - <50, 51>, line: 3,
     Multiply - <52, 53>, line: 3,
