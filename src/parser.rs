@@ -13,7 +13,7 @@ where
     I: Iterator<Item = Token>,
 {
     tokens: Peekable<I>,
-    input: &'a String,
+    input: &'a str,
 }
 
 #[derive(Debug, Error)]
@@ -46,7 +46,7 @@ impl<'a, I> Parser<'a, I>
 where
     I: Iterator<Item = Token>,
 {
-    pub fn new(tokens: I, input: &'a String) -> Self {
+    pub fn new(tokens: I, input: &'a str) -> Self {
         Self {
             tokens: tokens.peekable(),
             input,
