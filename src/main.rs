@@ -28,6 +28,7 @@ mod vm;
 // TODO: Functions need to return values, by placing in 0th register - this needs to be compiled
 // TODO: Add basic type checking - should be done in same pass as parser?
 // TODO: Better dump printing
+// TODO: Add line numbers to all errors?
 
 #[derive(clap::Parser, Debug)]
 #[command(version, about, long_about = None)]

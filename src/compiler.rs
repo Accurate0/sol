@@ -159,7 +159,7 @@ where
             }
             _ => {
                 return Err(CompilerError::GeneralError {
-                    cause: "function body must container block".to_owned(),
+                    cause: "function body must contain block".to_owned(),
                 })
             }
         }
@@ -322,6 +322,11 @@ where
                 let found_id = match found_id {
                     Some(f) => (self.functions.len() - f - 1) as FunctionId,
                     _ => {
+                        // TODO: instead of assuming it's native, we can set a placeholder
+                        //       and figure out at runtime which function to call?
+                        //       right now, we can only call functions which we've parsed
+                        //       see 'call_before_declare_function.rl' test case
+
                         // if no existing function, assume there is a native function
                         // available in the VM, this is now a runtime error if it doesn't exist
                         let register = self.compile_expression(&Expression::Literal(

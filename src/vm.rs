@@ -134,7 +134,8 @@ impl VM {
 
                     if native_function.is_none() {
                         return Err(ExecutionError::InvalidOperation {
-                            cause: "no matching native function called".to_owned(),
+                            cause: format!("no function matching name '{}' found", function_name)
+                                .to_owned(),
                         });
                     }
 

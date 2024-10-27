@@ -1,0 +1,5 @@
+---
+source: tests/integration.rs
+expression: output
+---
+ERROR plrs: no function matching name 'test' found
