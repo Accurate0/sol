@@ -84,9 +84,9 @@ fn main_internal() -> Result<(), Box<dyn std::error::Error>> {
         Commands::Run { file } => {
             let buffer = read_file_to_string(&file)?;
 
-            let mut lexer = Lexer::new(&buffer);
-            let mut parser = Parser::new(&mut lexer, &buffer);
-            let compiler = Compiler::new(&mut parser);
+            let lexer = Lexer::new(&buffer);
+            let parser = Parser::new(lexer, &buffer);
+            let compiler = Compiler::new(parser);
 
             let program = compiler.compile()?;
 
@@ -103,16 +103,16 @@ fn main_internal() -> Result<(), Box<dyn std::error::Error>> {
                     tracing::info!("{:#?}", tokens);
                 }
                 ItemToDump::Ast => {
-                    let mut lexer = Lexer::new(&buffer);
-                    let parser = Parser::new(&mut lexer, &buffer);
+                    let lexer = Lexer::new(&buffer);
+                    let parser = Parser::new(lexer, &buffer);
 
                     let ast = parser.flatten().collect::<Vec<_>>();
                     tracing::info!("{:#?}", ast);
                 }
                 ItemToDump::Bytecode => {
-                    let mut lexer = Lexer::new(&buffer);
-                    let mut parser = Parser::new(&mut lexer, &buffer);
-                    let compiler = Compiler::new(&mut parser);
+                    let lexer = Lexer::new(&buffer);
+                    let parser = Parser::new(lexer, &buffer);
+                    let compiler = Compiler::new(parser);
 
                     let program = compiler.compile()?;
                     tracing::info!("{:#?}", program);
