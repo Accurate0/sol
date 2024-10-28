@@ -24,11 +24,17 @@ mod scope;
 mod stdlib;
 mod vm;
 
-// TODO: Add support for testing and conditional jumps aka 'if' statements
+// TODO: Add support for <= == >= < > expressions and boolean evaluate them
 // TODO: Functions need to return values, by placing in 0th register - this needs to be compiled
+// TODO: Add objects, dynamically typed tables like lua? Special instructions for them
 // TODO: Add basic type checking - should be done in same pass as parser?
 // TODO: Better dump printing
 // TODO: Add line numbers to all errors?
+// TODO: Add ability to include other files? C-style #include? files that are included can't have
+//       global code, only the "main" file can... for now
+// TODO: Add generic statemap type thing passed to each stdlib function
+//       This will let me trivially add networking
+//       Also move to another crate due to dependencies
 
 #[derive(clap::Parser, Debug)]
 #[command(version, about, long_about = None)]

@@ -4,7 +4,7 @@ use crate::{
     parser::ParserError,
     scope::{Scope, ScopeType},
 };
-use std::{cell::RefCell, num::TryFromIntError, rc::Rc};
+use std::{cell::RefCell, num::TryFromIntError};
 use thiserror::Error;
 
 impl From<ParserError> for CompilerError {
@@ -17,8 +17,6 @@ impl From<ParserError> for CompilerError {
 pub enum CompilerError {
     #[error("{source}")]
     ParserError { source: ParserError },
-    #[error("internal compiler error")]
-    UnknownError,
     #[error("{cause}")]
     GeneralError { cause: String },
     #[error("variable '{0}' not found in scope", variable)]
@@ -54,25 +52,23 @@ where
     next_available_register: Register,
     functions: Vec<Function>,
     literals: Vec<Literal>,
-    global_code: Rc<RefCell<Vec<Instruction>>>,
-    current_code: Rc<RefCell<Vec<Instruction>>>,
+    // FIXME: probably doesn't need to be a RefCell
+    bytecode: RefCell<Vec<Instruction>>,
 }
 
 impl<I> Compiler<I>
 where
     I: Iterator<Item = Result<Statement, ParserError>>,
 {
-    // wtf
     pub fn new(parser: I) -> Self {
-        let global_code = Rc::new(Vec::new().into());
+        let bytecode = Vec::new().into();
         Self {
             parser,
             scope_stack: vec![Scope::new(ScopeType::Global)],
             literals: vec![],
             next_available_register: 1,
             functions: Default::default(),
-            global_code: Rc::clone(&global_code),
-            current_code: global_code,
+            bytecode,
         }
     }
 
@@ -81,15 +77,11 @@ where
             self.compile_statement(&statement?)?;
         }
 
-        drop(self.current_code);
-
         let global_register_count = self.next_available_register;
 
         Ok(CompiledProgram {
             functions: self.functions,
-            global_code: Rc::into_inner(self.global_code)
-                .ok_or(CompilerError::UnknownError)?
-                .into_inner(),
+            global_code: self.bytecode.into_inner(),
             global_register_count,
             literals: self.literals,
         })
@@ -146,7 +138,7 @@ where
         self.next_available_register = 1;
 
         self.add_scope();
-        let prev_code = self.current_code.replace(Vec::new());
+        let prev_code = self.bytecode.replace(Vec::new());
 
         for arg_name in &func.parameters {
             self.define_immutable_current_scope(arg_name, self.next_available_register);
@@ -166,9 +158,9 @@ where
             }
         }
 
-        self.current_code.borrow_mut().push(Instruction::Return);
+        self.bytecode.borrow_mut().push(Instruction::Return);
 
-        let function_code = self.current_code.replace(prev_code);
+        let function_code = self.bytecode.replace(prev_code);
         let used_registers = self.next_available_register;
 
         self.functions.push(Function {
@@ -234,7 +226,7 @@ where
                     }
                 };
 
-                self.current_code.borrow_mut().push(instruction);
+                self.bytecode.borrow_mut().push(instruction);
 
                 Ok(dest)
             }
@@ -256,7 +248,7 @@ where
                     }
                 };
 
-                self.current_code.borrow_mut().push(instruction);
+                self.bytecode.borrow_mut().push(instruction);
 
                 Ok(dest)
             }
@@ -285,7 +277,7 @@ where
                     src: literal_id,
                 };
 
-                self.current_code.borrow_mut().push(instruction);
+                self.bytecode.borrow_mut().push(instruction);
 
                 Ok(reg)
             }
@@ -314,7 +306,7 @@ where
                 let start_reg = self.next_available_register;
                 for reg in regs {
                     let dest = self.get_register();
-                    let mut current_code = self.current_code.borrow_mut();
+                    let mut current_code = self.bytecode.borrow_mut();
                     current_code.push(Instruction::Copy { dest, src: reg });
                 }
 
@@ -339,7 +331,7 @@ where
                             args: start_reg..last_reg,
                         };
 
-                        self.current_code.borrow_mut().push(instruction);
+                        self.bytecode.borrow_mut().push(instruction);
 
                         return Ok(register);
                     }
@@ -351,14 +343,14 @@ where
                     src: found_id,
                 };
 
-                self.current_code.borrow_mut().push(instruction);
+                self.bytecode.borrow_mut().push(instruction);
 
                 let instruction = Instruction::CallFunction {
                     src: reg,
                     args: start_reg..last_reg,
                 };
 
-                self.current_code.borrow_mut().push(instruction);
+                self.bytecode.borrow_mut().push(instruction);
 
                 Ok(reg)
             }
@@ -387,11 +379,11 @@ where
 
         // FIXME: use guards or something way better
         let if_statement_body = Vec::new();
-        let old_current_code = self.current_code.replace(if_statement_body);
+        let old_current_code = self.bytecode.replace(if_statement_body);
 
         self.compile_statement(body)?;
 
-        let mut if_statement_body = self.current_code.replace(old_current_code);
+        let mut if_statement_body = self.bytecode.replace(old_current_code);
 
         let instruction = Instruction::JumpIfFalse {
             src: expression_value_register,
@@ -399,18 +391,16 @@ where
             offset: if_statement_body.len().try_into().map(|i: u16| i + 1u16)?,
         };
 
-        self.current_code.borrow_mut().push(instruction);
+        self.bytecode.borrow_mut().push(instruction);
 
-        self.current_code
-            .borrow_mut()
-            .append(&mut if_statement_body);
+        self.bytecode.borrow_mut().append(&mut if_statement_body);
 
         if else_statement.is_none() {
             return Ok(());
         }
 
         let else_statements = Vec::new();
-        let old_current_code = self.current_code.replace(else_statements);
+        let old_current_code = self.bytecode.replace(else_statements);
 
         let else_statement = else_statement.as_deref().unwrap();
         match else_statement {
@@ -423,7 +413,7 @@ where
             _ => unreachable!(),
         }?;
 
-        let mut else_statement_body = self.current_code.replace(old_current_code);
+        let mut else_statement_body = self.bytecode.replace(old_current_code);
 
         let instruction = Instruction::Jump {
             offset: else_statement_body
@@ -432,11 +422,9 @@ where
                 .map(|i: u16| i + 1u16)?,
         };
 
-        self.current_code.borrow_mut().push(instruction);
+        self.bytecode.borrow_mut().push(instruction);
 
-        self.current_code
-            .borrow_mut()
-            .append(&mut else_statement_body);
+        self.bytecode.borrow_mut().append(&mut else_statement_body);
 
         Ok(())
     }
