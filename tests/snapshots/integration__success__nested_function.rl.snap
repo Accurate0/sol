@@ -1,0 +1,7 @@
+---
+source: tests/integration.rs
+expression: output
+---
+pass
+pass 2
+pass 3
