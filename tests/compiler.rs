@@ -94,3 +94,25 @@ let y = !x;
 
     assert_debug_snapshot!(output);
 }
+
+#[test]
+fn if_statement_boolean() {
+    let input = r#"
+if false {
+    print("boolean constant if");
+} else if false {
+    print("boolean constant else");
+} else {
+    print("final else");
+}
+        "#
+    .to_owned();
+
+    let mut lexer = Lexer::new(&input);
+    let mut parser = Parser::new(&mut lexer, &input);
+    let compiler = Compiler::new(&mut parser);
+
+    let output = compiler.compile().unwrap();
+
+    assert_debug_snapshot!(output);
+}

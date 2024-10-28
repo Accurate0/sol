@@ -62,6 +62,8 @@ impl VM {
                 RegisterValue::Function(f) => tracing::debug!("{i} {:?}", f.name),
             }
         }
+
+        tracing::debug!("");
     }
 
     pub fn run_with_registers_returned(&self) -> Result<Vec<RegisterValue>, ExecutionError> {
@@ -287,10 +289,25 @@ impl VM {
                         }
                     }
                 }
+                Instruction::JumpIfFalse { src, offset } => {
+                    let register_value = &register_window[*src as usize];
+                    // FIXME: are we type checked?
+                    match register_value {
+                        RegisterValue::Function(_) | RegisterValue::Empty => unreachable!(),
+                        RegisterValue::Literal(l) => match l.as_ref() {
+                            Literal::Boolean(b) => {
+                                if !b {
+                                    ip += *offset as usize;
+                                }
+                            }
+                            _ => unreachable!(),
+                        },
+                    }
+                }
+                Instruction::Jump { offset } => ip += *offset as usize,
             }
 
             Self::print_registers(register_window);
-            tracing::debug!("");
 
             ip += 1;
         }

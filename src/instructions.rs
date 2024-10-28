@@ -3,6 +3,7 @@ use std::ops::Range;
 pub type Register = u8;
 pub type LiteralId = u16;
 pub type FunctionId = u16;
+pub type JumpOffset = u16;
 
 #[derive(Debug, PartialEq)]
 pub enum Instruction {
@@ -33,6 +34,13 @@ pub enum Instruction {
     PrefixSub {
         dest: Register,
         rhs: Register,
+    },
+    JumpIfFalse {
+        src: Register,
+        offset: JumpOffset,
+    },
+    Jump {
+        offset: JumpOffset,
     },
     Add {
         dest: Register,

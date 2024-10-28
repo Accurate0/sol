@@ -1,0 +1,97 @@
+---
+source: tests/compiler.rs
+expression: output
+---
+CompiledProgram {
+    functions: [],
+    global_code: [
+        LoadLiteral {
+            dest: 1,
+            src: 0,
+        },
+        JumpIfFalse {
+            src: 1,
+            offset: 5,
+        },
+        LoadLiteral {
+            dest: 2,
+            src: 1,
+        },
+        Copy {
+            dest: 3,
+            src: 2,
+        },
+        LoadLiteral {
+            dest: 4,
+            src: 2,
+        },
+        CallNativeFunction {
+            src: 4,
+            args: 3..4,
+        },
+        Jump {
+            offset: 12,
+        },
+        LoadLiteral {
+            dest: 5,
+            src: 0,
+        },
+        JumpIfFalse {
+            src: 5,
+            offset: 5,
+        },
+        LoadLiteral {
+            dest: 6,
+            src: 3,
+        },
+        Copy {
+            dest: 7,
+            src: 6,
+        },
+        LoadLiteral {
+            dest: 8,
+            src: 2,
+        },
+        CallNativeFunction {
+            src: 8,
+            args: 7..8,
+        },
+        Jump {
+            offset: 5,
+        },
+        LoadLiteral {
+            dest: 9,
+            src: 4,
+        },
+        Copy {
+            dest: 10,
+            src: 9,
+        },
+        LoadLiteral {
+            dest: 11,
+            src: 2,
+        },
+        CallNativeFunction {
+            src: 11,
+            args: 10..11,
+        },
+    ],
+    global_register_count: 12,
+    literals: [
+        Boolean(
+            false,
+        ),
+        String(
+            "boolean constant if",
+        ),
+        String(
+            "print",
+        ),
+        String(
+            "boolean constant else",
+        ),
+        String(
+            "final else",
+        ),
+    ],
+}

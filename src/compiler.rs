@@ -4,7 +4,7 @@ use crate::{
     parser::ParserError,
     scope::{Scope, ScopeType},
 };
-use std::{cell::RefCell, rc::Rc};
+use std::{cell::RefCell, num::TryFromIntError, rc::Rc};
 use thiserror::Error;
 
 impl From<ParserError> for CompilerError {
@@ -25,6 +25,8 @@ pub enum CompilerError {
     VariableNotFound { variable: String },
     #[error("variable '{0}' is not mutable", variable)]
     MutationNotAllowed { variable: String },
+    #[error("integer conversion error: '{0}'")]
+    IntegerConversionError(#[from] TryFromIntError),
 }
 
 #[derive(Default, Debug, PartialEq)]
@@ -375,14 +377,68 @@ where
         Ok(())
     }
 
-    #[allow(unused_variables)]
     pub fn compile_if(
         &mut self,
         condition: &Expression,
         body: &Statement,
         else_statement: &Option<Box<Statement>>,
     ) -> Result<(), CompilerError> {
-        todo!()
+        let expression_value_register = self.compile_expression(condition)?;
+
+        // FIXME: use guards or something way better
+        let if_statement_body = Vec::new();
+        let old_current_code = self.current_code.replace(if_statement_body);
+
+        self.compile_statement(body)?;
+
+        let mut if_statement_body = self.current_code.replace(old_current_code);
+
+        let instruction = Instruction::JumpIfFalse {
+            src: expression_value_register,
+            // FIXME: size limit...
+            offset: if_statement_body.len().try_into().map(|i: u16| i + 1u16)?,
+        };
+
+        self.current_code.borrow_mut().push(instruction);
+
+        self.current_code
+            .borrow_mut()
+            .append(&mut if_statement_body);
+
+        if else_statement.is_none() {
+            return Ok(());
+        }
+
+        let else_statements = Vec::new();
+        let old_current_code = self.current_code.replace(else_statements);
+
+        let else_statement = else_statement.as_deref().unwrap();
+        match else_statement {
+            Statement::If {
+                condition,
+                body,
+                else_statement: next_else,
+            } => self.compile_if(condition, body, next_else),
+            Statement::Block { body } => self.compile_block(body),
+            _ => unreachable!(),
+        }?;
+
+        let mut else_statement_body = self.current_code.replace(old_current_code);
+
+        let instruction = Instruction::Jump {
+            offset: else_statement_body
+                .len()
+                .try_into()
+                .map(|i: u16| i + 1u16)?,
+        };
+
+        self.current_code.borrow_mut().push(instruction);
+
+        self.current_code
+            .borrow_mut()
+            .append(&mut else_statement_body);
+
+        Ok(())
     }
 
     pub fn compile_statement(&mut self, statement: &Statement) -> Result<(), CompilerError> {
