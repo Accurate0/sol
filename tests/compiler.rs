@@ -116,3 +116,62 @@ if false {
 
     assert_debug_snapshot!(output);
 }
+
+#[test]
+fn if_statement() {
+    let input = r#"
+if true {
+    print("pass");
+} else {
+    print("fail");
+}
+
+if 2 == 0 {
+    print("fail");
+} else {
+    print("pass");
+}
+
+if 2 >= 0 {
+    print("pass");
+} else {
+    print("fail");
+}
+
+if 2 <= 0 {
+    print("fail");
+} else {
+    print("pass");
+}
+
+if 2 > 0 {
+    print("pass");
+} else {
+    print("fail");
+}
+
+if 2 < 0 {
+    print("fail");
+} else {
+    print("pass");
+}
+
+
+if false {
+    print("fail");
+} else if true {
+    print("pass");
+} else {
+    print("fail");
+}
+        "#
+    .to_owned();
+
+    let mut lexer = Lexer::new(&input);
+    let mut parser = Parser::new(&mut lexer, &input);
+    let compiler = Compiler::new(&mut parser);
+
+    let output = compiler.compile().unwrap();
+
+    assert_debug_snapshot!(output);
+}

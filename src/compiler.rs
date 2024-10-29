@@ -237,10 +237,21 @@ where
                 let dest = self.get_register();
 
                 let instruction = match op {
+                    // FIXME: isn't this dumb?
                     ast::Operator::Plus => Instruction::Add { dest, lhs, rhs },
                     ast::Operator::Minus => Instruction::Sub { dest, lhs, rhs },
                     ast::Operator::Divide => Instruction::Div { dest, lhs, rhs },
                     ast::Operator::Multiply => Instruction::Mul { dest, lhs, rhs },
+                    ast::Operator::Equal => Instruction::Equals { dest, lhs, rhs },
+                    ast::Operator::NotEqual => Instruction::NotEquals { dest, lhs, rhs },
+                    ast::Operator::GreaterThan => Instruction::GreaterThan { dest, lhs, rhs },
+                    ast::Operator::GreaterThanOrEqual => {
+                        Instruction::GreaterThanOrEquals { dest, lhs, rhs }
+                    }
+                    ast::Operator::LessThan => Instruction::LessThan { dest, lhs, rhs },
+                    ast::Operator::LessThanOrEqual => {
+                        Instruction::LessThanOrEquals { dest, lhs, rhs }
+                    }
                     _ => {
                         return Err(CompilerError::GeneralError {
                             cause: "infix expression only works for '+', '-', '/', '*'".to_owned(),

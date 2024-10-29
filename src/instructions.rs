@@ -62,6 +62,36 @@ pub enum Instruction {
         lhs: Register,
         rhs: Register,
     },
+    Equals {
+        dest: Register,
+        lhs: Register,
+        rhs: Register,
+    },
+    NotEquals {
+        dest: Register,
+        lhs: Register,
+        rhs: Register,
+    },
+    GreaterThan {
+        dest: Register,
+        lhs: Register,
+        rhs: Register,
+    },
+    GreaterThanOrEquals {
+        dest: Register,
+        lhs: Register,
+        rhs: Register,
+    },
+    LessThan {
+        dest: Register,
+        lhs: Register,
+        rhs: Register,
+    },
+    LessThanOrEquals {
+        dest: Register,
+        lhs: Register,
+        rhs: Register,
+    },
     Return,
 }
 

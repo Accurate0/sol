@@ -24,7 +24,6 @@ mod scope;
 mod stdlib;
 mod vm;
 
-// TODO: Add support for <= == >= < > expressions and boolean evaluate them
 // TODO: Functions need to return values, by placing in 0th register - this needs to be compiled
 // TODO: Add objects, dynamically typed tables like lua? Special instructions for them
 // TODO: Add basic type checking - should be done in same pass as parser?

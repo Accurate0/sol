@@ -33,3 +33,18 @@ macro_rules! impl_binary_op {
         }
     };
 }
+
+#[macro_export]
+macro_rules! impl_binary_comparator {
+    ($registers:expr, $dest: expr, $lhs:expr, $x:tt, $rhs:expr) => {
+        {
+            let lhs = &$registers[*$lhs as usize];
+            let rhs = &$registers[*$rhs as usize];
+
+            let is_equal = lhs $x rhs;
+
+            $registers[*$dest as usize] =
+                RegisterValue::Literal(Cow::Owned(ast::Literal::Boolean(is_equal)))
+        }
+    }
+}
