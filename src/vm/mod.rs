@@ -5,8 +5,11 @@ use crate::{
     instructions::Instruction,
     stdlib::{NativeFunctionType, STANDARD_LIBRARY},
 };
-use std::{borrow::Cow, cmp::Ordering, collections::HashMap};
+use std::{borrow::Cow, collections::HashMap};
 use thiserror::Error;
+
+mod register;
+pub use register::*;
 
 struct SavedCallFrame<'a> {
     pub ip: usize,
@@ -18,40 +21,6 @@ struct SavedCallFrame<'a> {
 pub enum ExecutionError {
     #[error("{cause}")]
     InvalidOperation { cause: String },
-}
-
-#[derive(Default, Debug, Clone)]
-pub enum RegisterValue<'a> {
-    #[default]
-    Empty,
-    Literal(Cow<'a, ast::Literal>),
-    Function(&'a Function),
-}
-
-impl PartialEq for RegisterValue<'_> {
-    fn eq(&self, other: &Self) -> bool {
-        self.partial_cmp(other) == Some(Ordering::Equal)
-    }
-}
-
-impl PartialOrd for RegisterValue<'_> {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        match (self, other) {
-            (RegisterValue::Empty, RegisterValue::Empty) => Some(Ordering::Equal),
-            (RegisterValue::Literal(l1), RegisterValue::Literal(l2)) => {
-                match (l1.as_ref(), l2.as_ref()) {
-                    (Literal::String(l1), Literal::String(l2)) => l1.partial_cmp(l2),
-                    (Literal::Float(l1), Literal::Float(l2)) => l1.partial_cmp(l2),
-                    (Literal::Integer(l1), Literal::Integer(l2)) => l1.partial_cmp(l2),
-                    (Literal::Boolean(l1), Literal::Boolean(l2)) => l1.partial_cmp(l2),
-
-                    _ => None,
-                }
-            }
-
-            _ => None,
-        }
-    }
 }
 
 pub struct VM {
