@@ -12,6 +12,12 @@ mod register;
 pub use register::*;
 
 struct SavedCallFrame<'a> {
+    // FIXME: we could store the register array with each callframe
+    // right now each function is allowed 256 registers by the compiler
+    // but the VM only has 256 total, a deep call stack will easily go
+    // beyond this number, we'd need more memory but could allocate
+    // the right number of registers for each function
+    // or make the window resizable... abstract the window away and resize on access
     pub ip: usize,
     pub code: &'a Vec<Instruction>,
     pub register_count: u8,
