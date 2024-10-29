@@ -50,7 +50,6 @@ where
     parser: I,
     scope_stack: Vec<Scope>,
     next_available_register: Register,
-    // FIXME: function scope should not be global
     functions: Vec<Function>,
     literals: Vec<Literal>,
     // FIXME: probably doesn't need to be a RefCell
@@ -102,6 +101,11 @@ where
         current_scope.define_mutable(name, register);
     }
 
+    fn define_function_current_scope(&mut self, name: &str) {
+        let current_scope = self.scope_stack.last_mut().unwrap();
+        current_scope.define_function(name);
+    }
+
     fn can_mutate_variable(&mut self, name: &str) -> bool {
         let scope_stack = &mut self.scope_stack.iter().rev();
         for v in scope_stack {
@@ -124,6 +128,16 @@ where
         None
     }
 
+    fn resolve_function(&mut self, name: &str) -> bool {
+        let scope_stack = &mut self.scope_stack.iter().rev();
+        for v in scope_stack {
+            if v.contains_function(name) {
+                return true;
+            }
+        }
+        false
+    }
+
     fn remove_scope(&mut self) {
         self.scope_stack.pop();
     }
@@ -138,6 +152,7 @@ where
         let prev_register_count = self.next_available_register;
         self.next_available_register = 1;
 
+        self.define_function_current_scope(&func.name);
         self.add_scope();
         let prev_code = self.bytecode.replace(Vec::new());
 
@@ -302,13 +317,19 @@ where
                 name: function_to_call,
                 args,
             } => {
-                let function_list = self.functions.iter().rev().enumerate();
-                let mut found_id = None;
-                for (index, function) in function_list {
-                    if *function.name == *function_to_call {
-                        found_id = Some(index);
-                    }
-                }
+                // if it exists in scope we'll get the id
+                // if we don't have the id for the function, then we'll act like its a
+                // global/native function
+                let found_id = if self.resolve_function(function_to_call) {
+                    self.functions
+                        .iter()
+                        .rev()
+                        .enumerate()
+                        .find(|(_, f)| f.name == *function_to_call)
+                        .map(|(i, _)| i)
+                } else {
+                    None
+                };
 
                 let mut regs = vec![];
                 for arg in args {
@@ -331,6 +352,10 @@ where
                         //       and figure out at runtime which function to call?
                         //       right now, we can only call functions which we've parsed
                         //       see 'call_before_declare_function.rl' test case
+                        //
+                        // Note: We can check if stdlib functions exist, but not at runtime with VM
+                        //       defined functions.... maybe we need to require definitions earlier
+                        //       at the compiler level rather than at VM
 
                         // if no existing function, assume there is a native function
                         // available in the VM, this is now a runtime error if it doesn't exist

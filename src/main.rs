@@ -34,8 +34,7 @@ mod vm;
 // TODO: Add generic statemap type thing passed to each stdlib function
 //       This will let me trivially add networking
 //       Also move to another crate due to dependencies
-// TODO: Increase register count
-// TODO: function definitions should follow same scoping as variables, see `nested_function.rl`
+// TODO: Increase register count / reuse registers in some way....
 
 #[derive(clap::Parser, Debug)]
 #[command(version, about, long_about = None)]

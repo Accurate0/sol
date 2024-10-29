@@ -1,5 +1,8 @@
 use crate::instructions::Register;
-use std::{cell::RefCell, collections::HashMap};
+use std::{
+    cell::RefCell,
+    collections::{HashMap, HashSet},
+};
 
 #[derive(Debug)]
 pub struct Value {
@@ -7,16 +10,18 @@ pub struct Value {
     pub is_mutable: bool,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Default)]
 pub enum ScopeType {
     Global,
+    #[default]
     Local,
 }
 
 #[allow(unused)]
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct Scope {
     r#type: ScopeType,
+    functions: RefCell<HashSet<String>>,
     symbols: RefCell<HashMap<String, Value>>,
 }
 
@@ -24,13 +29,21 @@ impl Scope {
     pub fn new(scope_type: ScopeType) -> Self {
         Self {
             r#type: scope_type,
-            symbols: Default::default(),
+            ..Default::default()
         }
     }
 
     #[allow(dead_code)]
     pub fn is_global(&self) -> bool {
         self.r#type == ScopeType::Global
+    }
+
+    pub fn define_function(&self, function_name: &str) {
+        self.functions.borrow_mut().insert(function_name.to_owned());
+    }
+
+    pub fn contains_function(&self, function_name: &str) -> bool {
+        self.functions.borrow().contains(function_name)
     }
 
     pub fn define_immutable(&self, name: &str, register: Register) {

@@ -10,10 +10,10 @@ fn main() {
 
         print("pass");
         nested2();
-        nested3();
     }
 
     nested();
+    nested3();
 }
 
 main();
