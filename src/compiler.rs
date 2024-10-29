@@ -50,6 +50,7 @@ where
     parser: I,
     scope_stack: Vec<Scope>,
     next_available_register: Register,
+    // FIXME: function scope should not be global
     functions: Vec<Function>,
     literals: Vec<Literal>,
     // FIXME: probably doesn't need to be a RefCell
