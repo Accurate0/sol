@@ -346,7 +346,7 @@ impl VM {
                         },
                         _ => {
                             return Err(ExecutionError::InvalidOperation {
-                                cause: "'!' must be used on literals only".to_owned(),
+                                cause: "'-' must be used on literals only".to_owned(),
                             })
                         }
                     }
