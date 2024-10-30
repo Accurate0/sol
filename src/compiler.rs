@@ -174,7 +174,7 @@ where
             }
         }
 
-        self.bytecode.borrow_mut().push(Instruction::Return);
+        self.bytecode.borrow_mut().push(Instruction::FunctionReturn);
 
         let function_code = self.bytecode.replace(prev_code);
         let used_registers = self.next_available_register;
@@ -363,18 +363,22 @@ where
                             Literal::String(function_to_call.to_owned()),
                         ))?;
 
+                        let return_value = self.get_register();
+
                         let instruction = Instruction::CallNativeFunction {
                             src: register,
-                            args: start_reg..last_reg,
+                            arg_count: last_reg - start_reg,
+                            return_val: return_value,
                         };
 
                         self.bytecode.borrow_mut().push(instruction);
 
-                        return Ok(register);
+                        return Ok(return_value);
                     }
                 };
 
                 let reg = self.get_register();
+                let return_value = self.get_register();
                 let instruction = Instruction::LoadFunction {
                     dest: reg,
                     src: found_id,
@@ -384,12 +388,13 @@ where
 
                 let instruction = Instruction::CallFunction {
                     src: reg,
-                    args: start_reg..last_reg,
+                    arg_count: last_reg - start_reg,
+                    return_val: return_value,
                 };
 
                 self.bytecode.borrow_mut().push(instruction);
 
-                Ok(reg)
+                Ok(return_value)
             }
         }
     }
@@ -453,15 +458,21 @@ where
         let mut else_statement_body = self.bytecode.replace(old_current_code);
 
         let instruction = Instruction::Jump {
-            offset: else_statement_body
-                .len()
-                .try_into()
-                .map(|i: u16| i + 1u16)?,
+            // ?
+            offset: else_statement_body.len() as u16,
         };
 
         self.bytecode.borrow_mut().push(instruction);
 
         self.bytecode.borrow_mut().append(&mut else_statement_body);
+
+        Ok(())
+    }
+
+    pub fn compile_return(&mut self, expression: &Expression) -> Result<(), CompilerError> {
+        let expr_register = self.compile_expression(expression)?;
+        let instruction = Instruction::Return { val: expr_register };
+        self.bytecode.borrow_mut().push(instruction);
 
         Ok(())
     }
@@ -484,6 +495,7 @@ where
             Statement::Block { body } => self.compile_block(body)?,
             Statement::Function(func) => self.compile_function(func)?,
             Statement::Expression(expr) => self.compile_expression(expr).map(|_| ())?,
+            Statement::Return(expression) => self.compile_return(expression)?,
         }
 
         Ok(())

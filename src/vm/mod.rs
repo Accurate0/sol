@@ -21,6 +21,7 @@ struct SavedCallFrame<'a> {
     pub ip: usize,
     pub code: &'a Vec<Instruction>,
     pub register_count: u8,
+    pub function_return_value: u8,
 }
 
 #[derive(Error, Debug)]
@@ -90,7 +91,7 @@ impl VM {
             // tracing::info!("base_reg: {:?}", base_register);
 
             match current_instruction {
-                Instruction::Return => {
+                Instruction::FunctionReturn => {
                     if let Some(saved_call_frame) = saved_call_frames.pop() {
                         if let Some(current_call_frame) = saved_call_frames.last() {
                             base_register -= current_call_frame.register_count as usize;
@@ -100,7 +101,28 @@ impl VM {
 
                         register_window = &mut registers[base_register..];
 
-                        // TODO: return value
+                        ip = saved_call_frame.ip + 1;
+                        current_code = saved_call_frame.code;
+                        continue;
+                    };
+                }
+                Instruction::Return { val } => {
+                    if let Some(saved_call_frame) = saved_call_frames.pop() {
+                        if let Some(current_call_frame) = saved_call_frames.last() {
+                            base_register -= current_call_frame.register_count as usize;
+                        } else {
+                            base_register -= self.global_register_count as usize;
+                        }
+
+                        let register_to_copy_to = saved_call_frame.function_return_value;
+                        let register_to_copy_from = *val;
+
+                        let from = register_window[register_to_copy_from as usize].clone();
+
+                        register_window = &mut registers[base_register..];
+
+                        register_window[register_to_copy_to as usize] = from;
+
                         ip = saved_call_frame.ip + 1;
                         current_code = saved_call_frame.code;
                         continue;
@@ -110,7 +132,11 @@ impl VM {
                     let func = &self.functions[*src as usize];
                     register_window[*dest as usize] = RegisterValue::Function(func);
                 }
-                Instruction::CallNativeFunction { src, args } => {
+                Instruction::CallNativeFunction {
+                    src,
+                    arg_count,
+                    return_val,
+                } => {
                     let register = &register_window[*src as usize];
                     let function_name = match register {
                         RegisterValue::Literal(cow) => match cow.as_ref() {
@@ -143,8 +169,10 @@ impl VM {
                     }
 
                     let native_function = native_function.unwrap();
-                    let arg_start = args.start as usize;
-                    let arg_end = args.end as usize;
+
+                    let arg_start = *src as usize - *arg_count as usize;
+                    let arg_end = *src as usize;
+
                     let mut arg_values = Vec::with_capacity(arg_end - arg_start);
                     let registers_to_copy = &register_window[arg_start..arg_end];
                     for register in registers_to_copy {
@@ -152,9 +180,16 @@ impl VM {
                     }
 
                     // TODO: return value?
-                    (native_function)(arg_values);
+                    let return_value = (native_function)(arg_values);
+                    if let Some(return_value) = return_value {
+                        register_window[*return_val as usize] = return_value
+                    }
                 }
-                Instruction::CallFunction { src, args } => {
+                Instruction::CallFunction {
+                    src,
+                    arg_count,
+                    return_val,
+                } => {
                     let func = &register_window[*src as usize];
                     let func = match func {
                         RegisterValue::Function(f) => f,
@@ -184,8 +219,8 @@ impl VM {
                     // tracing::warn!("FUNCTION CALL: OLD");
                     // Self::print_registers(old_function);
 
-                    let arg_start = old_base + args.start as usize;
-                    let arg_end = old_base + args.end as usize;
+                    let arg_start = old_base + *src as usize - *arg_count as usize;
+                    let arg_end = old_base + *src as usize;
                     let registers_to_copy = &old_function[arg_start..arg_end];
 
                     // tracing::warn!("FUNCTION CALL: COPY");
@@ -203,12 +238,14 @@ impl VM {
                         ip: old_ip,
                         code: old_code,
                         register_count: *register_count,
+                        function_return_value: *return_val,
                     });
 
                     // tracing::warn!("register: {:?}", register_window);
                     // tracing::warn!("register: {:?}", self.global_register_count);
                     // tracing::warn!("register: {:?}", register_count);
 
+                    Self::print_registers(register_window);
                     continue;
                 }
 

@@ -1,6 +1,6 @@
 use crate::vm::RegisterValue;
 
-pub fn print(args: Vec<RegisterValue>) {
+pub fn print(args: Vec<RegisterValue>) -> Option<RegisterValue> {
     for arg in args {
         match arg {
             RegisterValue::Empty => print!("<empty>"),
@@ -12,4 +12,6 @@ pub fn print(args: Vec<RegisterValue>) {
     }
 
     println!();
+
+    None
 }

@@ -27,274 +27,231 @@ CompiledProgram {
         },
         CallNativeFunction {
             src: 4,
-            args: 3..4,
+            arg_count: 1,
+            return_val: 5,
         },
         Jump {
-            offset: 5,
+            offset: 4,
         },
         LoadLiteral {
-            dest: 5,
+            dest: 6,
             src: 3,
         },
         Copy {
-            dest: 6,
-            src: 5,
-        },
-        LoadLiteral {
             dest: 7,
-            src: 2,
-        },
-        CallNativeFunction {
-            src: 7,
-            args: 6..7,
+            src: 6,
         },
         LoadLiteral {
             dest: 8,
-            src: 4,
+            src: 2,
+        },
+        CallNativeFunction {
+            src: 8,
+            arg_count: 1,
+            return_val: 9,
         },
         LoadLiteral {
-            dest: 9,
-            src: 5,
-        },
-        Equals {
             dest: 10,
-            lhs: 8,
-            rhs: 9,
-        },
-        JumpIfFalse {
-            src: 10,
-            offset: 5,
+            src: 4,
         },
         LoadLiteral {
             dest: 11,
-            src: 3,
+            src: 5,
         },
-        Copy {
+        Equals {
             dest: 12,
-            src: 11,
+            lhs: 10,
+            rhs: 11,
+        },
+        JumpIfFalse {
+            src: 12,
+            offset: 5,
         },
         LoadLiteral {
             dest: 13,
-            src: 2,
-        },
-        CallNativeFunction {
-            src: 13,
-            args: 12..13,
-        },
-        Jump {
-            offset: 5,
-        },
-        LoadLiteral {
-            dest: 14,
-            src: 1,
+            src: 3,
         },
         Copy {
-            dest: 15,
-            src: 14,
+            dest: 14,
+            src: 13,
         },
         LoadLiteral {
-            dest: 16,
+            dest: 15,
             src: 2,
         },
         CallNativeFunction {
-            src: 16,
-            args: 15..16,
+            src: 15,
+            arg_count: 1,
+            return_val: 16,
+        },
+        Jump {
+            offset: 4,
         },
         LoadLiteral {
             dest: 17,
-            src: 4,
-        },
-        LoadLiteral {
-            dest: 18,
-            src: 5,
-        },
-        GreaterThanOrEquals {
-            dest: 19,
-            lhs: 17,
-            rhs: 18,
-        },
-        JumpIfFalse {
-            src: 19,
-            offset: 5,
-        },
-        LoadLiteral {
-            dest: 20,
             src: 1,
         },
         Copy {
+            dest: 18,
+            src: 17,
+        },
+        LoadLiteral {
+            dest: 19,
+            src: 2,
+        },
+        CallNativeFunction {
+            src: 19,
+            arg_count: 1,
+            return_val: 20,
+        },
+        LoadLiteral {
             dest: 21,
-            src: 20,
+            src: 4,
         },
         LoadLiteral {
             dest: 22,
-            src: 2,
+            src: 5,
         },
-        CallNativeFunction {
-            src: 22,
-            args: 21..22,
+        GreaterThanOrEquals {
+            dest: 23,
+            lhs: 21,
+            rhs: 22,
         },
-        Jump {
+        JumpIfFalse {
+            src: 23,
             offset: 5,
         },
         LoadLiteral {
-            dest: 23,
-            src: 3,
+            dest: 24,
+            src: 1,
         },
         Copy {
-            dest: 24,
-            src: 23,
-        },
-        LoadLiteral {
             dest: 25,
-            src: 2,
-        },
-        CallNativeFunction {
-            src: 25,
-            args: 24..25,
+            src: 24,
         },
         LoadLiteral {
             dest: 26,
-            src: 4,
-        },
-        LoadLiteral {
-            dest: 27,
-            src: 5,
-        },
-        LessThanOrEquals {
-            dest: 28,
-            lhs: 26,
-            rhs: 27,
-        },
-        JumpIfFalse {
-            src: 28,
-            offset: 5,
-        },
-        LoadLiteral {
-            dest: 29,
-            src: 3,
-        },
-        Copy {
-            dest: 30,
-            src: 29,
-        },
-        LoadLiteral {
-            dest: 31,
             src: 2,
         },
         CallNativeFunction {
-            src: 31,
-            args: 30..31,
+            src: 26,
+            arg_count: 1,
+            return_val: 27,
         },
         Jump {
-            offset: 5,
+            offset: 4,
+        },
+        LoadLiteral {
+            dest: 28,
+            src: 3,
+        },
+        Copy {
+            dest: 29,
+            src: 28,
+        },
+        LoadLiteral {
+            dest: 30,
+            src: 2,
+        },
+        CallNativeFunction {
+            src: 30,
+            arg_count: 1,
+            return_val: 31,
         },
         LoadLiteral {
             dest: 32,
-            src: 1,
-        },
-        Copy {
-            dest: 33,
-            src: 32,
+            src: 4,
         },
         LoadLiteral {
-            dest: 34,
-            src: 2,
+            dest: 33,
+            src: 5,
         },
-        CallNativeFunction {
+        LessThanOrEquals {
+            dest: 34,
+            lhs: 32,
+            rhs: 33,
+        },
+        JumpIfFalse {
             src: 34,
-            args: 33..34,
+            offset: 5,
         },
         LoadLiteral {
             dest: 35,
-            src: 4,
-        },
-        LoadLiteral {
-            dest: 36,
-            src: 5,
-        },
-        GreaterThan {
-            dest: 37,
-            lhs: 35,
-            rhs: 36,
-        },
-        JumpIfFalse {
-            src: 37,
-            offset: 5,
-        },
-        LoadLiteral {
-            dest: 38,
-            src: 1,
+            src: 3,
         },
         Copy {
-            dest: 39,
-            src: 38,
+            dest: 36,
+            src: 35,
         },
         LoadLiteral {
-            dest: 40,
+            dest: 37,
             src: 2,
         },
         CallNativeFunction {
-            src: 40,
-            args: 39..40,
+            src: 37,
+            arg_count: 1,
+            return_val: 38,
         },
         Jump {
-            offset: 5,
+            offset: 4,
+        },
+        LoadLiteral {
+            dest: 39,
+            src: 1,
+        },
+        Copy {
+            dest: 40,
+            src: 39,
         },
         LoadLiteral {
             dest: 41,
-            src: 3,
+            src: 2,
         },
-        Copy {
-            dest: 42,
+        CallNativeFunction {
             src: 41,
+            arg_count: 1,
+            return_val: 42,
         },
         LoadLiteral {
             dest: 43,
-            src: 2,
-        },
-        CallNativeFunction {
-            src: 43,
-            args: 42..43,
-        },
-        LoadLiteral {
-            dest: 44,
             src: 4,
         },
         LoadLiteral {
-            dest: 45,
+            dest: 44,
             src: 5,
         },
-        LessThan {
-            dest: 46,
-            lhs: 44,
-            rhs: 45,
+        GreaterThan {
+            dest: 45,
+            lhs: 43,
+            rhs: 44,
         },
         JumpIfFalse {
-            src: 46,
+            src: 45,
             offset: 5,
         },
         LoadLiteral {
-            dest: 47,
-            src: 3,
+            dest: 46,
+            src: 1,
         },
         Copy {
-            dest: 48,
-            src: 47,
+            dest: 47,
+            src: 46,
         },
         LoadLiteral {
-            dest: 49,
+            dest: 48,
             src: 2,
         },
         CallNativeFunction {
-            src: 49,
-            args: 48..49,
+            src: 48,
+            arg_count: 1,
+            return_val: 49,
         },
         Jump {
-            offset: 5,
+            offset: 4,
         },
         LoadLiteral {
             dest: 50,
-            src: 1,
+            src: 3,
         },
         Copy {
             dest: 51,
@@ -306,65 +263,49 @@ CompiledProgram {
         },
         CallNativeFunction {
             src: 52,
-            args: 51..52,
-        },
-        LoadLiteral {
-            dest: 53,
-            src: 6,
-        },
-        JumpIfFalse {
-            src: 53,
-            offset: 5,
+            arg_count: 1,
+            return_val: 53,
         },
         LoadLiteral {
             dest: 54,
-            src: 3,
-        },
-        Copy {
-            dest: 55,
-            src: 54,
+            src: 4,
         },
         LoadLiteral {
+            dest: 55,
+            src: 5,
+        },
+        LessThan {
             dest: 56,
-            src: 2,
+            lhs: 54,
+            rhs: 55,
         },
-        CallNativeFunction {
+        JumpIfFalse {
             src: 56,
-            args: 55..56,
-        },
-        Jump {
-            offset: 12,
+            offset: 5,
         },
         LoadLiteral {
             dest: 57,
-            src: 0,
-        },
-        JumpIfFalse {
-            src: 57,
-            offset: 5,
-        },
-        LoadLiteral {
-            dest: 58,
-            src: 1,
+            src: 3,
         },
         Copy {
-            dest: 59,
-            src: 58,
+            dest: 58,
+            src: 57,
         },
         LoadLiteral {
-            dest: 60,
+            dest: 59,
             src: 2,
         },
         CallNativeFunction {
-            src: 60,
-            args: 59..60,
+            src: 59,
+            arg_count: 1,
+            return_val: 60,
         },
         Jump {
-            offset: 5,
+            offset: 4,
         },
         LoadLiteral {
             dest: 61,
-            src: 3,
+            src: 1,
         },
         Copy {
             dest: 62,
@@ -376,10 +317,84 @@ CompiledProgram {
         },
         CallNativeFunction {
             src: 63,
-            args: 62..63,
+            arg_count: 1,
+            return_val: 64,
+        },
+        LoadLiteral {
+            dest: 65,
+            src: 6,
+        },
+        JumpIfFalse {
+            src: 65,
+            offset: 5,
+        },
+        LoadLiteral {
+            dest: 66,
+            src: 3,
+        },
+        Copy {
+            dest: 67,
+            src: 66,
+        },
+        LoadLiteral {
+            dest: 68,
+            src: 2,
+        },
+        CallNativeFunction {
+            src: 68,
+            arg_count: 1,
+            return_val: 69,
+        },
+        Jump {
+            offset: 11,
+        },
+        LoadLiteral {
+            dest: 70,
+            src: 0,
+        },
+        JumpIfFalse {
+            src: 70,
+            offset: 5,
+        },
+        LoadLiteral {
+            dest: 71,
+            src: 1,
+        },
+        Copy {
+            dest: 72,
+            src: 71,
+        },
+        LoadLiteral {
+            dest: 73,
+            src: 2,
+        },
+        CallNativeFunction {
+            src: 73,
+            arg_count: 1,
+            return_val: 74,
+        },
+        Jump {
+            offset: 4,
+        },
+        LoadLiteral {
+            dest: 75,
+            src: 3,
+        },
+        Copy {
+            dest: 76,
+            src: 75,
+        },
+        LoadLiteral {
+            dest: 77,
+            src: 2,
+        },
+        CallNativeFunction {
+            src: 77,
+            arg_count: 1,
+            return_val: 78,
         },
     ],
-    global_register_count: 64,
+    global_register_count: 79,
     literals: [
         Boolean(
             true,

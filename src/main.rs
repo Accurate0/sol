@@ -24,7 +24,6 @@ mod scope;
 mod stdlib;
 mod vm;
 
-// TODO: Functions need to return values, by placing in 0th register - this needs to be compiled
 // TODO: Add objects, dynamically typed tables like lua? Special instructions for them
 // TODO: Add basic type checking - should be done in same pass as parser?
 // TODO: Better dump printing
@@ -111,9 +110,19 @@ fn main_internal() -> Result<(), Box<dyn std::error::Error>> {
                 ItemToDump::Ast => {
                     let lexer = Lexer::new(&buffer);
                     let parser = Parser::new(lexer, &buffer);
+                    let ast = parser.collect::<Vec<_>>();
 
-                    let ast = parser.flatten().collect::<Vec<_>>();
-                    tracing::info!("{:#?}", ast);
+                    if ast.iter().any(Result::is_err) {
+                        let errors = ast
+                            .iter()
+                            .filter(|r| r.is_err())
+                            .map(|r| r.as_ref().unwrap_err())
+                            .collect::<Vec<_>>();
+
+                        tracing::error!("{:#?}", errors);
+                    } else {
+                        tracing::info!("{:#?}", ast.iter().flatten().collect::<Vec<_>>());
+                    }
                 }
                 ItemToDump::Bytecode => {
                     let lexer = Lexer::new(&buffer);

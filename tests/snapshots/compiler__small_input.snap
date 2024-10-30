@@ -7,7 +7,7 @@ CompiledProgram {
         Function {
             name: "print",
             code: [
-                Return,
+                FunctionReturn,
             ],
             register_count: 1,
         },
@@ -41,7 +41,7 @@ CompiledProgram {
                     lhs: 3,
                     rhs: 6,
                 },
-                Return,
+                FunctionReturn,
             ],
             register_count: 8,
         },
@@ -75,51 +75,55 @@ CompiledProgram {
                 },
                 CallFunction {
                     src: 6,
-                    args: 5..6,
+                    arg_count: 1,
+                    return_val: 7,
                 },
                 Copy {
-                    dest: 7,
+                    dest: 8,
                     src: 3,
                 },
                 LoadFunction {
-                    dest: 8,
+                    dest: 9,
                     src: 0,
                 },
                 CallFunction {
-                    src: 8,
-                    args: 7..8,
+                    src: 9,
+                    arg_count: 1,
+                    return_val: 10,
                 },
                 LoadLiteral {
-                    dest: 9,
-                    src: 1,
-                },
-                Copy {
-                    dest: 10,
-                    src: 9,
-                },
-                LoadFunction {
                     dest: 11,
                     src: 1,
                 },
-                CallFunction {
-                    src: 11,
-                    args: 10..11,
-                },
                 Copy {
                     dest: 12,
-                    src: 3,
+                    src: 11,
                 },
                 LoadFunction {
                     dest: 13,
-                    src: 0,
+                    src: 1,
                 },
                 CallFunction {
                     src: 13,
-                    args: 12..13,
+                    arg_count: 1,
+                    return_val: 14,
                 },
-                Return,
+                Copy {
+                    dest: 15,
+                    src: 3,
+                },
+                LoadFunction {
+                    dest: 16,
+                    src: 0,
+                },
+                CallFunction {
+                    src: 16,
+                    arg_count: 1,
+                    return_val: 17,
+                },
+                FunctionReturn,
             ],
-            register_count: 14,
+            register_count: 18,
         },
     ],
     global_code: [
@@ -142,10 +146,11 @@ CompiledProgram {
         },
         CallFunction {
             src: 4,
-            args: 4..4,
+            arg_count: 0,
+            return_val: 5,
         },
     ],
-    global_register_count: 5,
+    global_register_count: 6,
     literals: [
         Integer(
             3,

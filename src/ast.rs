@@ -59,6 +59,7 @@ pub enum Statement {
     Block {
         body: Vec<Statement>,
     },
+    Return(Expression),
     Function(Function),
     Expression(Expression),
 }

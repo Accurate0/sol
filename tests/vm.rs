@@ -1,5 +1,11 @@
 use insta::assert_compact_debug_snapshot;
-use plrs::{compiler::Compiler, lexer::Lexer, parser::Parser, vm::VM};
+use plrs::{
+    ast,
+    compiler::Compiler,
+    lexer::Lexer,
+    parser::Parser,
+    vm::{RegisterValue, VM},
+};
 
 #[test]
 fn complex_math() {
@@ -92,7 +98,35 @@ fn native_function() {
 
     let program = compiler.compile().unwrap();
 
-    let vm = VM::new(program).define_native_function("test_function".to_owned(), |_| {});
+    let vm = VM::new(program).define_native_function("test_function".to_owned(), |_| None);
+    let register_state = vm.run_with_registers_returned();
+
+    assert_compact_debug_snapshot!(register_state);
+}
+
+#[test]
+fn native_function_with_return_value() {
+    let input = r#"
+        let x = test();
+        if x {
+            print("pass");
+        } else {
+            print("fail");
+        }
+        "#
+    .to_owned();
+
+    let mut lexer = Lexer::new(&input);
+    let mut parser = Parser::new(&mut lexer, &input);
+    let compiler = Compiler::new(&mut parser);
+
+    let program = compiler.compile().unwrap();
+
+    let vm = VM::new(program).define_native_function("test".to_owned(), |_| {
+        Some(RegisterValue::Literal(std::borrow::Cow::Owned(
+            ast::Literal::Boolean(true),
+        )))
+    });
     let register_state = vm.run_with_registers_returned();
 
     assert_compact_debug_snapshot!(register_state);

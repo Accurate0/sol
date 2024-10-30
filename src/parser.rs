@@ -260,6 +260,13 @@ where
         Ok(expr)
     }
 
+    fn parse_return(&mut self) -> Result<ast::Statement, ParserError> {
+        let expr = self.parse_expression(0)?;
+        self.consume(TokenKind::EndOfLine)?;
+
+        Ok(ast::Statement::Return(expr))
+    }
+
     fn parse_statement_identifier(&mut self) -> Result<ast::Statement, ParserError> {
         let identifier = self.consume(TokenKind::Identifier)?;
         match self.text(&identifier) {
@@ -267,6 +274,7 @@ where
             "const" => self.parse_const(),
             "fn" => Ok(ast::Statement::Function(self.parse_function()?)),
             "if" => self.parse_if_statement(),
+            "return" => self.parse_return(),
             name if self.peek() == TokenKind::OpenParen => Ok(ast::Statement::Expression(
                 self.parse_function_call(name, true)?,
             )),
@@ -437,6 +445,7 @@ impl<'a, I> Iterator for Parser<'a, I>
 where
     I: Iterator<Item = Token>,
 {
+    // FIXME: DUMB
     type Item = Result<Statement, ParserError>;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -451,7 +460,8 @@ where
             TokenKind::EndOfLine => {
                 let token = self.consume(TokenKind::EndOfLine);
                 if let Err(e) = token {
-                    Some(Err::<Statement, ParserError>(e))
+                    tracing::error!("{}", e);
+                    None
                 } else {
                     None
                 }
@@ -464,7 +474,9 @@ where
                     in_function: stringify!(parse),
                 };
 
-                Some(Err(e))
+                tracing::error!("{}", e);
+
+                None
             }
         }
     }

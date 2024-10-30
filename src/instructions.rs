@@ -1,5 +1,3 @@
-use std::ops::Range;
-
 pub type Register = u8;
 pub type LiteralId = u16;
 pub type FunctionId = u16;
@@ -17,11 +15,13 @@ pub enum Instruction {
     },
     CallNativeFunction {
         src: Register,
-        args: Range<Register>,
+        arg_count: u8,
+        return_val: Register,
     },
     CallFunction {
         src: Register,
-        args: Range<Register>,
+        arg_count: u8,
+        return_val: Register,
     },
     LoadLiteral {
         dest: Register,
@@ -92,7 +92,10 @@ pub enum Instruction {
         lhs: Register,
         rhs: Register,
     },
-    Return,
+    Return {
+        val: Register,
+    },
+    FunctionReturn,
 }
 
 #[cfg(test)]

@@ -1,0 +1,14 @@
+---
+source: tests/integration.rs
+expression: output
+---
+testing
+pass
+testing
+pass
+pass
+<empty>
+wow
+true
+wow
+true

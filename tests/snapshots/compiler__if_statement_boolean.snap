@@ -27,56 +27,59 @@ CompiledProgram {
         },
         CallNativeFunction {
             src: 4,
-            args: 3..4,
+            arg_count: 1,
+            return_val: 5,
         },
         Jump {
-            offset: 12,
-        },
-        LoadLiteral {
-            dest: 5,
-            src: 0,
-        },
-        JumpIfFalse {
-            src: 5,
-            offset: 5,
+            offset: 11,
         },
         LoadLiteral {
             dest: 6,
-            src: 3,
+            src: 0,
         },
-        Copy {
-            dest: 7,
+        JumpIfFalse {
             src: 6,
-        },
-        LoadLiteral {
-            dest: 8,
-            src: 2,
-        },
-        CallNativeFunction {
-            src: 8,
-            args: 7..8,
-        },
-        Jump {
             offset: 5,
         },
         LoadLiteral {
-            dest: 9,
-            src: 4,
+            dest: 7,
+            src: 3,
         },
         Copy {
-            dest: 10,
-            src: 9,
+            dest: 8,
+            src: 7,
         },
         LoadLiteral {
-            dest: 11,
+            dest: 9,
             src: 2,
         },
         CallNativeFunction {
+            src: 9,
+            arg_count: 1,
+            return_val: 10,
+        },
+        Jump {
+            offset: 4,
+        },
+        LoadLiteral {
+            dest: 11,
+            src: 4,
+        },
+        Copy {
+            dest: 12,
             src: 11,
-            args: 10..11,
+        },
+        LoadLiteral {
+            dest: 13,
+            src: 2,
+        },
+        CallNativeFunction {
+            src: 13,
+            arg_count: 1,
+            return_val: 14,
         },
     ],
-    global_register_count: 12,
+    global_register_count: 15,
     literals: [
         Boolean(
             false,
