@@ -24,6 +24,7 @@ mod scope;
 mod stdlib;
 mod vm;
 
+// TODO: Add loops
 // TODO: Add objects, dynamically typed tables like lua? Special instructions for them
 // TODO: Add basic type checking - should be done in same pass as parser?
 // TODO: Better dump printing
@@ -34,6 +35,9 @@ mod vm;
 //       This will let me trivially add networking
 //       Also move to another crate due to dependencies
 // TODO: Increase register count / reuse registers in some way....
+//       Find a way to reclaim registers once they are proved unused
+//       Collect a list of registers as we parse that won't be reused in a scope
+//       And every time we need one, check this list
 
 #[derive(clap::Parser, Debug)]
 #[command(version, about, long_about = None)]
