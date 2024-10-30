@@ -459,11 +459,9 @@ where
             TokenKind::OpenBrace => Some(self.parse_block()),
             TokenKind::EndOfLine => {
                 let token = self.consume(TokenKind::EndOfLine);
-                if let Err(e) = token {
-                    tracing::error!("{}", e);
-                    None
-                } else {
-                    None
+                match token {
+                    Ok(_) => None,
+                    Err(e) => Some(Err(e)),
                 }
             }
             _ => {
@@ -474,9 +472,7 @@ where
                     in_function: stringify!(parse),
                 };
 
-                tracing::error!("{}", e);
-
-                None
+                Some(Err(e))
             }
         }
     }

@@ -110,19 +110,18 @@ fn main_internal() -> Result<(), Box<dyn std::error::Error>> {
                 ItemToDump::Ast => {
                     let lexer = Lexer::new(&buffer);
                     let parser = Parser::new(lexer, &buffer);
-                    let ast = parser.collect::<Vec<_>>();
 
-                    if ast.iter().any(Result::is_err) {
-                        let errors = ast
-                            .iter()
-                            .filter(|r| r.is_err())
-                            .map(|r| r.as_ref().unwrap_err())
-                            .collect::<Vec<_>>();
+                    let mut tokens = Vec::new();
+                    for token in parser {
+                        if token.is_err() {
+                            tracing::error!("{}", token.unwrap_err());
+                            break;
+                        }
 
-                        tracing::error!("{:#?}", errors);
-                    } else {
-                        tracing::info!("{:#?}", ast.iter().flatten().collect::<Vec<_>>());
+                        tokens.push(token.unwrap());
                     }
+
+                    tracing::info!("{tokens:#?}")
                 }
                 ItemToDump::Bytecode => {
                     let lexer = Lexer::new(&buffer);
