@@ -23,6 +23,7 @@ fn criterion_benchmark(c: &mut Criterion) {
                 Parser::new(lexer, input)
             },
             move |parser| {
+                // parser returning result means error builds infinitely and ooms :)
                 let _ = parser.collect::<Vec<_>>();
             },
             BatchSize::SmallInput,

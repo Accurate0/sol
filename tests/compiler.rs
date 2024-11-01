@@ -175,3 +175,39 @@ if false {
 
     assert_debug_snapshot!(output);
 }
+
+#[test]
+fn nested_loop() {
+    let input = r#"
+let mut x = 0;
+loop {
+    let mut y = 0;
+    loop {
+        if y > 3 {
+            print("exit loop");
+            break;
+        }
+
+        y = y + 1;
+        print(y);
+    }
+
+    if x > 3 {
+        print("exit loop");
+        break;
+    }
+
+    x = x + 1;
+    print(x);
+}
+        "#
+    .to_owned();
+
+    let mut lexer = Lexer::new(&input);
+    let mut parser = Parser::new(&mut lexer, &input);
+    let compiler = Compiler::new(&mut parser);
+
+    let output = compiler.compile().unwrap();
+
+    assert_debug_snapshot!(output);
+}

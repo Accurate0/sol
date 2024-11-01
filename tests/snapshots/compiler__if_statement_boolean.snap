@@ -11,7 +11,7 @@ CompiledProgram {
         },
         JumpIfFalse {
             src: 1,
-            offset: 5,
+            offset: 6,
         },
         LoadLiteral {
             dest: 2,
@@ -31,7 +31,7 @@ CompiledProgram {
             return_val: 5,
         },
         Jump {
-            offset: 11,
+            offset: 12,
         },
         LoadLiteral {
             dest: 6,
@@ -39,7 +39,7 @@ CompiledProgram {
         },
         JumpIfFalse {
             src: 6,
-            offset: 5,
+            offset: 6,
         },
         LoadLiteral {
             dest: 7,
@@ -59,7 +59,7 @@ CompiledProgram {
             return_val: 10,
         },
         Jump {
-            offset: 4,
+            offset: 5,
         },
         LoadLiteral {
             dest: 11,

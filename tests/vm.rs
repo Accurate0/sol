@@ -131,3 +131,42 @@ fn native_function_with_return_value() {
 
     assert_compact_debug_snapshot!(register_state);
 }
+
+#[test]
+fn nested_loop() {
+    let input = r#"
+let mut x = 0;
+loop {
+    let mut y = 0;
+    loop {
+        if y > 3 {
+            print("exit loop");
+            break;
+        }
+
+        y = y + 1;
+        print(y);
+    }
+
+    if x > 3 {
+        print("exit loop");
+        break;
+    }
+
+    x = x + 1;
+    print(x);
+}
+        "#
+    .to_owned();
+
+    let mut lexer = Lexer::new(&input);
+    let mut parser = Parser::new(&mut lexer, &input);
+    let compiler = Compiler::new(&mut parser);
+
+    let program = compiler.compile().unwrap();
+
+    let vm = VM::new(program);
+    let register_state = vm.run_with_registers_returned();
+
+    assert_compact_debug_snapshot!(register_state);
+}

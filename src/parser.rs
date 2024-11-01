@@ -267,6 +267,17 @@ where
         Ok(ast::Statement::Return(expr))
     }
 
+    fn parse_loop(&mut self) -> Result<ast::Statement, ParserError> {
+        let block = self.parse_block()?;
+        Ok(ast::Statement::Loop { body: block.into() })
+    }
+
+    fn parse_break(&mut self) -> Result<ast::Statement, ParserError> {
+        self.consume(TokenKind::EndOfLine)?;
+
+        Ok(ast::Statement::Break)
+    }
+
     fn parse_statement_identifier(&mut self) -> Result<ast::Statement, ParserError> {
         let identifier = self.consume(TokenKind::Identifier)?;
         match self.text(&identifier) {
@@ -275,6 +286,8 @@ where
             "fn" => Ok(ast::Statement::Function(self.parse_function()?)),
             "if" => self.parse_if_statement(),
             "return" => self.parse_return(),
+            "loop" => self.parse_loop(),
+            "break" => self.parse_break(),
             name if self.peek() == TokenKind::OpenParen => Ok(ast::Statement::Expression(
                 self.parse_function_call(name, true)?,
             )),

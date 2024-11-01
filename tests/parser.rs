@@ -384,3 +384,44 @@ if false {
 
     assert_debug_snapshot!(statements);
 }
+
+#[test]
+fn nested_loop() {
+    let input = r#"
+let mut x = 0;
+loop {
+    let mut y = 0;
+    loop {
+        if y > 3 {
+            print("exit loop");
+            break;
+        }
+
+        y = y + 1;
+        print(y);
+    }
+
+    if x > 3 {
+        print("exit loop");
+        break;
+    }
+
+    x = x + 1;
+    print(x);
+}
+    "#
+    .to_owned();
+
+    let mut lexer = Lexer::new(&input);
+    let parser = Parser::new(&mut lexer, &input);
+    let statements = parser.collect::<Vec<_>>();
+
+    assert!(statements.iter().all(|s| s.is_ok()));
+
+    let statements = statements
+        .into_iter()
+        .map(|s| s.unwrap())
+        .collect::<Vec<_>>();
+
+    assert_debug_snapshot!(statements);
+}

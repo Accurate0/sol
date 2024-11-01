@@ -42,6 +42,9 @@ pub enum Instruction {
     Jump {
         offset: JumpOffset,
     },
+    JumpReverse {
+        offset: JumpOffset,
+    },
     Add {
         dest: Register,
         lhs: Register,

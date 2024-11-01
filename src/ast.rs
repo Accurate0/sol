@@ -59,9 +59,13 @@ pub enum Statement {
     Block {
         body: Vec<Statement>,
     },
+    Loop {
+        body: Box<Statement>,
+    },
     Return(Expression),
     Function(Function),
     Expression(Expression),
+    Break,
 }
 
 #[derive(Debug, PartialEq)]

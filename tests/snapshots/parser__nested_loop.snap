@@ -1,0 +1,146 @@
+---
+source: tests/parser.rs
+expression: statements
+---
+[
+    Let {
+        name: "x",
+        value: Literal(
+            Integer(
+                0,
+            ),
+        ),
+        is_mutable: true,
+    },
+    Loop {
+        body: Block {
+            body: [
+                Let {
+                    name: "y",
+                    value: Literal(
+                        Integer(
+                            0,
+                        ),
+                    ),
+                    is_mutable: true,
+                },
+                Loop {
+                    body: Block {
+                        body: [
+                            If {
+                                condition: Infix {
+                                    op: GreaterThan,
+                                    lhs: Variable(
+                                        "y",
+                                    ),
+                                    rhs: Literal(
+                                        Integer(
+                                            3,
+                                        ),
+                                    ),
+                                },
+                                body: Block {
+                                    body: [
+                                        Expression(
+                                            FunctionCall {
+                                                name: "print",
+                                                args: [
+                                                    Literal(
+                                                        String(
+                                                            "exit loop",
+                                                        ),
+                                                    ),
+                                                ],
+                                            },
+                                        ),
+                                        Break,
+                                    ],
+                                },
+                                else_statement: None,
+                            },
+                            Reassignment {
+                                name: "y",
+                                value: Infix {
+                                    op: Plus,
+                                    lhs: Variable(
+                                        "y",
+                                    ),
+                                    rhs: Literal(
+                                        Integer(
+                                            1,
+                                        ),
+                                    ),
+                                },
+                            },
+                            Expression(
+                                FunctionCall {
+                                    name: "print",
+                                    args: [
+                                        Variable(
+                                            "y",
+                                        ),
+                                    ],
+                                },
+                            ),
+                        ],
+                    },
+                },
+                If {
+                    condition: Infix {
+                        op: GreaterThan,
+                        lhs: Variable(
+                            "x",
+                        ),
+                        rhs: Literal(
+                            Integer(
+                                3,
+                            ),
+                        ),
+                    },
+                    body: Block {
+                        body: [
+                            Expression(
+                                FunctionCall {
+                                    name: "print",
+                                    args: [
+                                        Literal(
+                                            String(
+                                                "exit loop",
+                                            ),
+                                        ),
+                                    ],
+                                },
+                            ),
+                            Break,
+                        ],
+                    },
+                    else_statement: None,
+                },
+                Reassignment {
+                    name: "x",
+                    value: Infix {
+                        op: Plus,
+                        lhs: Variable(
+                            "x",
+                        ),
+                        rhs: Literal(
+                            Integer(
+                                1,
+                            ),
+                        ),
+                    },
+                },
+                Expression(
+                    FunctionCall {
+                        name: "print",
+                        args: [
+                            Variable(
+                                "x",
+                            ),
+                        ],
+                    },
+                ),
+            ],
+        },
+    },
+]

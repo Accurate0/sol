@@ -1,6 +1,6 @@
 use crate::{
     ast::{self, Expression, Literal, Statement},
-    instructions::{FunctionId, Instruction, LiteralId, Register},
+    instructions::{FunctionId, Instruction, JumpOffset, LiteralId, Register},
     parser::ParserError,
     scope::{Scope, ScopeType},
 };
@@ -215,7 +215,16 @@ where
         let can_mutate = self.can_mutate_variable(name);
         if can_mutate {
             let expression_value_register = self.compile_expression(value)?;
-            self.define_mutable_current_scope(name, expression_value_register);
+            let mutable_value_register = self.resolve(name).unwrap();
+
+            let instruction = Instruction::Copy {
+                dest: mutable_value_register,
+                src: expression_value_register,
+            };
+
+            self.bytecode.borrow_mut().push(instruction);
+            // ???
+            self.define_mutable_current_scope(name, mutable_value_register);
 
             Ok(())
         } else {
@@ -427,14 +436,18 @@ where
 
         let mut if_statement_body = self.bytecode.replace(old_current_code);
 
+        let offset = if else_statement.is_none() { 0 } else { 1 };
         let instruction = Instruction::JumpIfFalse {
             src: expression_value_register,
             // FIXME: size limit...
-            offset: if_statement_body.len().try_into().map(|i: u16| i + 1u16)?,
+            offset: if_statement_body
+                .len()
+                .try_into()
+                // 1 for going after if statement and 1 for going after jump that's might be added below
+                .map(|i: u16| i + 1u16 + offset)?,
         };
 
         self.bytecode.borrow_mut().push(instruction);
-
         self.bytecode.borrow_mut().append(&mut if_statement_body);
 
         if else_statement.is_none() {
@@ -459,7 +472,7 @@ where
 
         let instruction = Instruction::Jump {
             // ?
-            offset: else_statement_body.len() as u16,
+            offset: else_statement_body.len() as u16 + 1,
         };
 
         self.bytecode.borrow_mut().push(instruction);
@@ -477,27 +490,78 @@ where
         Ok(())
     }
 
+    pub fn compile_loop(&mut self, body: &Statement) -> Result<(), CompilerError> {
+        let bytecode_size = self.bytecode.borrow().len();
+
+        match body {
+            Statement::Block { body } => self.compile_block(body)?,
+            _ => unreachable!(),
+        };
+
+        let body_size = self.bytecode.borrow().len() - bytecode_size;
+
+        let mut bytecode = self.bytecode.borrow_mut();
+        let mut i = 0;
+        loop {
+            let offset = body_size - i + 2;
+            if i >= body_size {
+                break;
+            }
+
+            let instruction = &mut bytecode[i];
+
+            if let Instruction::Jump {
+                offset: maybe_placeholder_offset,
+            } = instruction
+            {
+                if *maybe_placeholder_offset == 0xDEAD {
+                    bytecode[i] = Instruction::Jump {
+                        offset: offset.try_into().map(|o: JumpOffset| o + 1)?,
+                    }
+                }
+            }
+
+            i += 1;
+        }
+
+        let instruction = Instruction::JumpReverse {
+            offset: body_size.try_into()?,
+        };
+
+        bytecode.push(instruction);
+
+        Ok(())
+    }
+
+    pub fn compile_break(&mut self) -> Result<(), CompilerError> {
+        // breaks should only exist in loops, so we need to update this offset
+        let instruction = Instruction::Jump { offset: 0xDEAD };
+        self.bytecode.borrow_mut().push(instruction);
+
+        Ok(())
+    }
+
     pub fn compile_statement(&mut self, statement: &Statement) -> Result<(), CompilerError> {
         match statement {
             // kinda sus?
-            Statement::Const { name, value } => self.compile_let(name, value, false)?,
+            Statement::Const { name, value } => self.compile_let(name, value, false),
             Statement::Let {
                 name,
                 value,
                 is_mutable,
-            } => self.compile_let(name, value, *is_mutable)?,
-            Statement::Reassignment { name, value } => self.compile_let_mutation(name, value)?,
+            } => self.compile_let(name, value, *is_mutable),
+            Statement::Reassignment { name, value } => self.compile_let_mutation(name, value),
             Statement::If {
                 condition,
                 body,
                 else_statement,
-            } => self.compile_if(condition, body, else_statement)?,
-            Statement::Block { body } => self.compile_block(body)?,
-            Statement::Function(func) => self.compile_function(func)?,
-            Statement::Expression(expr) => self.compile_expression(expr).map(|_| ())?,
-            Statement::Return(expression) => self.compile_return(expression)?,
+            } => self.compile_if(condition, body, else_statement),
+            Statement::Block { body } => self.compile_block(body),
+            Statement::Function(func) => self.compile_function(func),
+            Statement::Expression(expr) => self.compile_expression(expr).map(|_| ()),
+            Statement::Return(expression) => self.compile_return(expression),
+            Statement::Loop { body } => self.compile_loop(body),
+            Statement::Break => self.compile_break(),
         }
-
-        Ok(())
     }
 }

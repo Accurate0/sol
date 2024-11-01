@@ -13,6 +13,10 @@ CompiledProgram {
             dest: 2,
             src: 1,
         },
+        Copy {
+            dest: 1,
+            src: 2,
+        },
     ],
     global_register_count: 3,
     literals: [

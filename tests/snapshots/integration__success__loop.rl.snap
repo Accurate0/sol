@@ -1,0 +1,9 @@
+---
+source: tests/integration.rs
+expression: output
+---
+1
+2
+3
+4
+exit loop

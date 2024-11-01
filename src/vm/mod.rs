@@ -131,6 +131,8 @@ impl VM {
                 Instruction::LoadFunction { dest, src } => {
                     let func = &self.functions[*src as usize];
                     register_window[*dest as usize] = RegisterValue::Function(func);
+
+                    ip += 1;
                 }
                 Instruction::CallNativeFunction {
                     src,
@@ -184,6 +186,8 @@ impl VM {
                     if let Some(return_value) = return_value {
                         register_window[*return_val as usize] = return_value
                     }
+
+                    ip += 1;
                 }
                 Instruction::CallFunction {
                     src,
@@ -253,50 +257,74 @@ impl VM {
                     let literal = &self.literals[*src as usize];
                     register_window[*dest as usize] =
                         RegisterValue::Literal(Cow::Borrowed(literal));
+
+                    ip += 1;
                 }
 
                 Instruction::Add { dest, lhs, rhs } => {
-                    impl_binary_op!(register_window, dest, lhs, +, rhs)
+                    impl_binary_op!(register_window, dest, lhs, +, rhs);
+
+                    ip += 1;
                 }
 
                 Instruction::Sub { dest, lhs, rhs } => {
-                    impl_binary_op!(register_window, dest, lhs, -, rhs)
+                    impl_binary_op!(register_window, dest, lhs, -, rhs);
+
+                    ip += 1;
                 }
 
                 Instruction::Mul { dest, lhs, rhs } => {
-                    impl_binary_op!(register_window, dest, lhs, *, rhs)
+                    impl_binary_op!(register_window, dest, lhs, *, rhs);
+
+                    ip += 1;
                 }
 
                 Instruction::Div { dest, lhs, rhs } => {
-                    impl_binary_op!(register_window, dest, lhs, /, rhs)
+                    impl_binary_op!(register_window, dest, lhs, /, rhs);
+
+                    ip += 1;
                 }
 
                 Instruction::Equals { dest, lhs, rhs } => {
-                    impl_binary_comparator!(register_window, dest, lhs, ==, rhs)
+                    impl_binary_comparator!(register_window, dest, lhs, ==, rhs);
+
+                    ip += 1;
                 }
 
                 Instruction::NotEquals { dest, lhs, rhs } => {
-                    impl_binary_comparator!(register_window, dest, lhs, !=, rhs)
+                    impl_binary_comparator!(register_window, dest, lhs, !=, rhs);
+
+                    ip += 1;
                 }
 
                 Instruction::GreaterThan { dest, lhs, rhs } => {
-                    impl_binary_comparator!(register_window, dest, lhs, >, rhs)
+                    impl_binary_comparator!(register_window, dest, lhs, >, rhs);
+
+                    ip += 1;
                 }
 
                 Instruction::GreaterThanOrEquals { dest, lhs, rhs } => {
-                    impl_binary_comparator!(register_window, dest, lhs, >=, rhs)
+                    impl_binary_comparator!(register_window, dest, lhs, >=, rhs);
+
+                    ip += 1;
                 }
 
                 Instruction::LessThan { dest, lhs, rhs } => {
-                    impl_binary_comparator!(register_window, dest, lhs, <, rhs)
+                    impl_binary_comparator!(register_window, dest, lhs, <, rhs);
+
+                    ip += 1;
                 }
 
                 Instruction::LessThanOrEquals { dest, lhs, rhs } => {
-                    impl_binary_comparator!(register_window, dest, lhs, <=, rhs)
+                    impl_binary_comparator!(register_window, dest, lhs, <=, rhs);
+
+                    ip += 1;
                 }
 
                 Instruction::Copy { dest, src } => {
-                    register_window[*dest as usize] = register_window[*src as usize].clone()
+                    register_window[*dest as usize] = register_window[*src as usize].clone();
+
+                    ip += 1;
                 }
                 Instruction::PrefixNot { dest, rhs } => {
                     let rhs = &register_window[*rhs as usize];
@@ -320,6 +348,8 @@ impl VM {
                             })
                         }
                     }
+
+                    ip += 1;
                 }
                 Instruction::PrefixSub { dest, rhs } => {
                     let rhs = &register_window[*rhs as usize];
@@ -350,6 +380,8 @@ impl VM {
                             })
                         }
                     }
+
+                    ip += 1;
                 }
                 Instruction::JumpIfFalse { src, offset } => {
                     let register_value = &register_window[*src as usize];
@@ -358,7 +390,9 @@ impl VM {
                         RegisterValue::Function(_) | RegisterValue::Empty => unreachable!(),
                         RegisterValue::Literal(l) => match l.as_ref() {
                             Literal::Boolean(b) => {
-                                if !b {
+                                if *b {
+                                    ip += 1;
+                                } else {
                                     ip += *offset as usize;
                                 }
                             }
@@ -367,11 +401,10 @@ impl VM {
                     }
                 }
                 Instruction::Jump { offset } => ip += *offset as usize,
+                Instruction::JumpReverse { offset } => ip -= *offset as usize,
             }
 
             Self::print_registers(register_window);
-
-            ip += 1;
         }
 
         // dbg!(registers);
