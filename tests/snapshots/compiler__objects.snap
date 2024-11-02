@@ -1,0 +1,383 @@
+---
+source: tests/compiler.rs
+expression: output
+---
+CompiledProgram {
+    functions: [],
+    global_code: [
+        LoadLiteral {
+            dest: 1,
+            src: 0,
+        },
+        AllocateObject {
+            dest: 2,
+        },
+        LoadLiteral {
+            dest: 3,
+            src: 1,
+        },
+        LoadLiteral {
+            dest: 4,
+            src: 2,
+        },
+        SetObjectField {
+            object: 2,
+            field: 3,
+            value: 4,
+        },
+        AllocateObject {
+            dest: 5,
+        },
+        LoadLiteral {
+            dest: 6,
+            src: 3,
+        },
+        LoadLiteral {
+            dest: 7,
+            src: 4,
+        },
+        SetObjectField {
+            object: 5,
+            field: 6,
+            value: 7,
+        },
+        LoadLiteral {
+            dest: 8,
+            src: 5,
+        },
+        LoadLiteral {
+            dest: 9,
+            src: 6,
+        },
+        SetObjectField {
+            object: 5,
+            field: 8,
+            value: 9,
+        },
+        LoadLiteral {
+            dest: 10,
+            src: 7,
+        },
+        SetObjectField {
+            object: 5,
+            field: 10,
+            value: 1,
+        },
+        LoadLiteral {
+            dest: 11,
+            src: 8,
+        },
+        SetObjectField {
+            object: 5,
+            field: 11,
+            value: 2,
+        },
+        LoadLiteral {
+            dest: 12,
+            src: 9,
+        },
+        AllocateObject {
+            dest: 13,
+        },
+        LoadLiteral {
+            dest: 14,
+            src: 10,
+        },
+        AllocateObject {
+            dest: 15,
+        },
+        LoadLiteral {
+            dest: 16,
+            src: 11,
+        },
+        LoadLiteral {
+            dest: 17,
+            src: 12,
+        },
+        SetObjectField {
+            object: 15,
+            field: 16,
+            value: 17,
+        },
+        SetObjectField {
+            object: 13,
+            field: 14,
+            value: 15,
+        },
+        SetObjectField {
+            object: 5,
+            field: 12,
+            value: 13,
+        },
+        Copy {
+            dest: 18,
+            src: 5,
+        },
+        LoadLiteral {
+            dest: 19,
+            src: 13,
+        },
+        CallNativeFunction {
+            src: 19,
+            arg_count: 1,
+            return_val: 20,
+        },
+        LoadLiteral {
+            dest: 22,
+            src: 3,
+        },
+        GetObjectField {
+            object: 5,
+            field: 22,
+            return_val: 21,
+        },
+        Copy {
+            dest: 23,
+            src: 21,
+        },
+        LoadLiteral {
+            dest: 24,
+            src: 13,
+        },
+        CallNativeFunction {
+            src: 24,
+            arg_count: 1,
+            return_val: 25,
+        },
+        LoadLiteral {
+            dest: 27,
+            src: 5,
+        },
+        GetObjectField {
+            object: 5,
+            field: 27,
+            return_val: 26,
+        },
+        Copy {
+            dest: 28,
+            src: 26,
+        },
+        LoadLiteral {
+            dest: 29,
+            src: 13,
+        },
+        CallNativeFunction {
+            src: 29,
+            arg_count: 1,
+            return_val: 30,
+        },
+        LoadLiteral {
+            dest: 32,
+            src: 7,
+        },
+        GetObjectField {
+            object: 5,
+            field: 32,
+            return_val: 31,
+        },
+        Copy {
+            dest: 33,
+            src: 31,
+        },
+        LoadLiteral {
+            dest: 34,
+            src: 13,
+        },
+        CallNativeFunction {
+            src: 34,
+            arg_count: 1,
+            return_val: 35,
+        },
+        LoadLiteral {
+            dest: 37,
+            src: 8,
+        },
+        GetObjectField {
+            object: 5,
+            field: 37,
+            return_val: 36,
+        },
+        Copy {
+            dest: 38,
+            src: 36,
+        },
+        LoadLiteral {
+            dest: 39,
+            src: 13,
+        },
+        CallNativeFunction {
+            src: 39,
+            arg_count: 1,
+            return_val: 40,
+        },
+        LoadLiteral {
+            dest: 42,
+            src: 8,
+        },
+        GetObjectField {
+            object: 5,
+            field: 42,
+            return_val: 41,
+        },
+        LoadLiteral {
+            dest: 43,
+            src: 1,
+        },
+        GetObjectField {
+            object: 41,
+            field: 43,
+            return_val: 41,
+        },
+        Copy {
+            dest: 44,
+            src: 41,
+        },
+        LoadLiteral {
+            dest: 45,
+            src: 13,
+        },
+        CallNativeFunction {
+            src: 45,
+            arg_count: 1,
+            return_val: 46,
+        },
+        LoadLiteral {
+            dest: 48,
+            src: 9,
+        },
+        GetObjectField {
+            object: 5,
+            field: 48,
+            return_val: 47,
+        },
+        Copy {
+            dest: 49,
+            src: 47,
+        },
+        LoadLiteral {
+            dest: 50,
+            src: 13,
+        },
+        CallNativeFunction {
+            src: 50,
+            arg_count: 1,
+            return_val: 51,
+        },
+        LoadLiteral {
+            dest: 53,
+            src: 9,
+        },
+        GetObjectField {
+            object: 5,
+            field: 53,
+            return_val: 52,
+        },
+        LoadLiteral {
+            dest: 54,
+            src: 10,
+        },
+        GetObjectField {
+            object: 52,
+            field: 54,
+            return_val: 52,
+        },
+        Copy {
+            dest: 55,
+            src: 52,
+        },
+        LoadLiteral {
+            dest: 56,
+            src: 13,
+        },
+        CallNativeFunction {
+            src: 56,
+            arg_count: 1,
+            return_val: 57,
+        },
+        LoadLiteral {
+            dest: 59,
+            src: 9,
+        },
+        GetObjectField {
+            object: 5,
+            field: 59,
+            return_val: 58,
+        },
+        LoadLiteral {
+            dest: 60,
+            src: 10,
+        },
+        GetObjectField {
+            object: 58,
+            field: 60,
+            return_val: 58,
+        },
+        LoadLiteral {
+            dest: 61,
+            src: 11,
+        },
+        GetObjectField {
+            object: 58,
+            field: 61,
+            return_val: 58,
+        },
+        Copy {
+            dest: 62,
+            src: 58,
+        },
+        LoadLiteral {
+            dest: 63,
+            src: 13,
+        },
+        CallNativeFunction {
+            src: 63,
+            arg_count: 1,
+            return_val: 64,
+        },
+    ],
+    global_register_count: 65,
+    literals: [
+        Integer(
+            3,
+        ),
+        String(
+            "inner_value",
+        ),
+        Integer(
+            32,
+        ),
+        String(
+            "test",
+        ),
+        Integer(
+            1,
+        ),
+        String(
+            "test2",
+        ),
+        String(
+            "testing",
+        ),
+        String(
+            "test3",
+        ),
+        String(
+            "test4",
+        ),
+        String(
+            "test5",
+        ),
+        String(
+            "test6",
+        ),
+        String(
+            "test7",
+        ),
+        Integer(
+            1999,
+        ),
+        String(
+            "print",
+        ),
+    ],
+}

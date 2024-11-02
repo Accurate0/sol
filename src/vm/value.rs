@@ -1,18 +1,16 @@
 use crate::{
     compiler,
-    types::{self, Literal},
+    types::{self, Literal, Object},
 };
-use std::{borrow::Cow, cmp::Ordering, collections::HashMap};
+use std::{borrow::Cow, cell::RefCell, cmp::Ordering, rc::Rc};
 
-pub struct Object<'a> {
-    fields: HashMap<VMValue<'a>, VMValue<'a>>,
-}
-
+// FIXME: is this too big?
 #[derive(Default, Debug, Clone)]
 pub enum VMValue<'a> {
     #[default]
     Empty,
     Literal(Cow<'a, types::Literal>),
+    Object(Rc<RefCell<Object>>),
     Function(&'a compiler::Function),
 }
 

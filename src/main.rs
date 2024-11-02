@@ -25,7 +25,6 @@ mod stdlib;
 mod types;
 mod vm;
 
-// TODO: Add objects, dynamically typed tables like lua? Special instructions for them
 // TODO: Add basic type checking - should be done in same pass as parser?
 // TODO: Better dump printing
 // TODO: Add line numbers to all errors?

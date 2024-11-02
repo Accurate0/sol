@@ -170,3 +170,48 @@ loop {
 
     assert_compact_debug_snapshot!(register_state);
 }
+
+#[test]
+fn objects() {
+    let input = r#"
+let y = 3;
+
+let another_object = {
+    inner_value: 32,
+};
+
+let x = {
+    test: 1,
+    test2: "testing",
+    test3: y,
+    test4: another_object,
+    test5: {
+        test6: {
+            test7: 1999
+        }
+    }
+};
+
+print(x);
+print(x.test);
+print(x.test2);
+print(x.test3);
+print(x.test4);
+print(x.test4.inner_value);
+print(x.test5);
+print(x.test5.test6);
+print(x.test5.test6.test7);
+        "#
+    .to_owned();
+
+    let mut lexer = Lexer::new(&input);
+    let mut parser = Parser::new(&mut lexer, &input);
+    let compiler = Compiler::new(&mut parser);
+
+    let program = compiler.compile().unwrap();
+
+    let vm = VM::new(program);
+    let register_state = vm.run_with_registers_returned();
+
+    assert_compact_debug_snapshot!(register_state);
+}

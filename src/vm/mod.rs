@@ -1,4 +1,4 @@
-use crate::types::Literal;
+use crate::types::{Literal, Object, ObjectValue};
 use crate::{
     compiler::{CompiledProgram, Function},
     impl_binary_comparator, impl_binary_op,
@@ -6,6 +6,8 @@ use crate::{
     stdlib::{NativeFunctionType, STANDARD_LIBRARY},
     types,
 };
+use itertools::Itertools;
+use std::rc::Rc;
 use std::{borrow::Cow, collections::HashMap};
 use thiserror::Error;
 
@@ -63,6 +65,7 @@ impl VM {
                 VMValue::Empty => {}
                 VMValue::Literal(l) => tracing::debug!("{i} {:?}", l),
                 VMValue::Function(f) => tracing::debug!("{i} {:?}", f.name),
+                VMValue::Object(object) => tracing::debug!("{i} {:?}", object),
             }
         }
 
@@ -387,7 +390,9 @@ impl VM {
                     let register_value = &register_window[*src as usize];
                     // FIXME: are we type checked?
                     match register_value {
-                        VMValue::Function(_) | VMValue::Empty => unreachable!(),
+                        VMValue::Object(_) | VMValue::Function(_) | VMValue::Empty => {
+                            unreachable!()
+                        }
                         VMValue::Literal(l) => match l.as_ref() {
                             Literal::Boolean(b) => {
                                 if *b {
@@ -402,6 +407,84 @@ impl VM {
                 }
                 Instruction::Jump { offset } => ip += *offset as usize,
                 Instruction::JumpReverse { offset } => ip -= *offset as usize,
+                Instruction::AllocateObject { dest } => {
+                    register_window[*dest as usize] = VMValue::Object(Object::new());
+                    ip += 1;
+                }
+                Instruction::SetObjectField {
+                    object,
+                    field,
+                    value,
+                } => {
+                    let obj = match &register_window[*object as usize] {
+                        VMValue::Object(object) => object,
+                        _ => unreachable!(),
+                    };
+
+                    let key = match &register_window[*field as usize] {
+                        VMValue::Literal(lit) => match lit.as_ref() {
+                            Literal::String(s) => s.clone(),
+                            _ => unreachable!(),
+                        },
+                        _ => unreachable!(),
+                    };
+
+                    let value = match &register_window[*value as usize] {
+                        VMValue::Literal(lit) => ObjectValue::Literal(lit.as_ref().clone()),
+                        VMValue::Object(object) => ObjectValue::Object(object.clone()),
+                        VMValue::Function(f) => ObjectValue::Function(
+                            self.functions
+                                .iter()
+                                .find_position(|func| func.name == f.name)
+                                .unwrap()
+                                .0,
+                        ),
+                        _ => unreachable!(),
+                    };
+
+                    obj.borrow_mut().insert(key, Rc::new(value.into()));
+                    ip += 1;
+                }
+                Instruction::GetObjectField {
+                    object,
+                    field,
+                    return_val,
+                } => {
+                    let key = match &register_window[*field as usize] {
+                        VMValue::Literal(lit) => lit.as_ref(),
+                        _ => unreachable!(),
+                    };
+
+                    let register_value = {
+                        let obj = match register_window[*object as usize] {
+                            VMValue::Object(ref object) => object.clone(),
+                            _ => unreachable!(),
+                        };
+                        let obj = obj.borrow();
+                        let obj_value = obj.index(key);
+
+                        match obj_value {
+                            Some(obj) => {
+                                let obj = obj.clone();
+                                let obj = obj.borrow();
+
+                                match &*obj {
+                                    ObjectValue::Object(rc) => VMValue::Object(rc.clone()),
+                                    ObjectValue::Literal(literal) => {
+                                        VMValue::Literal(Cow::Owned(literal.clone()))
+                                    }
+                                    ObjectValue::Function(f_id) => {
+                                        VMValue::Function(self.functions.get(*f_id).unwrap())
+                                    }
+                                }
+                            }
+                            None => VMValue::Empty,
+                        }
+                    };
+
+                    register_window[*return_val as usize] = register_value;
+                    ip += 1;
+                }
             }
 
             Self::print_registers(register_window);

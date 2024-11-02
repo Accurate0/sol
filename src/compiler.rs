@@ -406,6 +406,54 @@ where
 
                 Ok(return_value)
             }
+            Expression::Object { fields } => {
+                let reg = self.get_register();
+
+                let instruction = Instruction::AllocateObject { dest: reg };
+                self.bytecode.borrow_mut().push(instruction);
+
+                // FIXME: use a deterministic hashmap or something instead of sorting (cave man)
+                for (name, value) in fields.iter() {
+                    let name = self.compile_expression(&Expression::Literal(Literal::String(
+                        name.to_string(),
+                    )))?;
+                    let value = self.compile_expression(value)?;
+
+                    let instruction = Instruction::SetObjectField {
+                        object: reg,
+                        field: name,
+                        value,
+                    };
+
+                    self.bytecode.borrow_mut().push(instruction);
+                }
+
+                Ok(reg)
+            }
+            Expression::ObjectAccess { path } => {
+                let register = self.get_register();
+                let base_obj = path.first().unwrap();
+                let mut obj_reg =
+                    self.compile_expression(&Expression::Variable(base_obj.to_string()))?;
+
+                for path_value in path.iter().skip(1) {
+                    let path_reg = self.compile_expression(&Expression::Literal(
+                        Literal::String(path_value.to_string()),
+                    ))?;
+
+                    let instruction = Instruction::GetObjectField {
+                        object: obj_reg,
+                        field: path_reg,
+                        return_val: register,
+                    };
+
+                    self.bytecode.borrow_mut().push(instruction);
+
+                    obj_reg = register;
+                }
+
+                Ok(register)
+            }
         }
     }
 

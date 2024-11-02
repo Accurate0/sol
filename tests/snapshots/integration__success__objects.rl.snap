@@ -1,0 +1,13 @@
+---
+source: tests/integration.rs
+expression: output
+---
+{"test": "1", "test2": "testing", "test3": "3", "test4": "{\"inner_value\": \"32\"}", "test5": "{\"test6\": \"{\\\"test7\\\": \\\"1999\\\"}\"}"}
+1
+testing
+3
+{"inner_value": "32"}
+32
+{"test6": "{\"test7\": \"1999\"}"}
+{"test7": "1999"}
+1999

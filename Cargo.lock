@@ -583,6 +583,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b410bbe7e14ab526a0e86877eb47c6996a2bd7746f027ba551028c925390e4e9"
 
 [[package]]
+name = "ordermap"
+version = "0.5.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "31f2bd7b03bf2c767e1bb7b91505dbe022833776e60480275e6f2fb0db0c7503"
+dependencies = [
+ "indexmap",
+]
+
+[[package]]
 name = "overload"
 version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -680,6 +689,7 @@ dependencies = [
  "fxhash",
  "insta",
  "itertools 0.13.0",
+ "ordermap",
  "phf",
  "pretty_assertions",
  "rstest",

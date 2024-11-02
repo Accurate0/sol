@@ -1,4 +1,5 @@
-use crate::types;
+use crate::types::{self};
+use ordermap::OrderMap;
 
 #[derive(Debug, PartialEq)]
 pub struct Function {
@@ -89,6 +90,11 @@ impl Operator {
 }
 
 #[derive(Debug, PartialEq)]
+pub struct ObjectExpression {
+    pub fields: OrderMap<String, Expression>,
+}
+
+#[derive(Debug, PartialEq)]
 pub enum Expression {
     Prefix {
         op: Operator,
@@ -104,5 +110,11 @@ pub enum Expression {
     FunctionCall {
         name: String,
         args: Vec<Expression>,
+    },
+    Object {
+        fields: OrderMap<String, Expression>,
+    },
+    ObjectAccess {
+        path: Vec<String>,
     },
 }

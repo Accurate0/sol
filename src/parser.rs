@@ -3,6 +3,7 @@ use crate::{
     lexer::{Span, Token, TokenKind},
     types,
 };
+use ordermap::OrderMap;
 use std::{
     iter::Peekable,
     num::{ParseFloatError, ParseIntError},
@@ -157,9 +158,38 @@ where
         Ok(expr)
     }
 
+    fn parse_object(&mut self) -> Result<ast::Expression, ParserError> {
+        self.consume(TokenKind::OpenBrace)?;
+
+        let mut fields = OrderMap::new();
+        // left side is identifier only.
+        loop {
+            if self.peek() == TokenKind::CloseBrace {
+                break;
+            }
+
+            let key = self.consume(TokenKind::Identifier)?;
+            self.consume(TokenKind::Colon)?;
+            let value = self.parse_expression(0)?;
+
+            fields.insert(self.text(&key).to_string(), value);
+
+            if self.peek() == TokenKind::Comma {
+                self.consume(TokenKind::Comma)?;
+            } else {
+                break;
+            }
+        }
+
+        self.consume(TokenKind::CloseBrace)?;
+
+        Ok(ast::Expression::Object { fields })
+    }
+
     fn parse_expression(&mut self, binding_power: u8) -> Result<ast::Expression, ParserError> {
         let lhs = {
             match self.peek() {
+                TokenKind::OpenBrace => self.parse_object(),
                 TokenKind::Identifier => self.parse_expression_identifier(),
                 TokenKind::OpenParen => {
                     self.consume(TokenKind::OpenParen)?;
@@ -247,6 +277,23 @@ where
         }
     }
 
+    fn parse_object_access(&mut self, first: &str) -> Result<ast::Expression, ParserError> {
+        let mut path = vec![first.to_string()];
+
+        loop {
+            if self.peek() == TokenKind::Dot {
+                self.consume(TokenKind::Dot)?;
+            } else {
+                break;
+            }
+
+            let token = self.consume(TokenKind::Identifier)?;
+            path.push(self.text(&token).to_string());
+        }
+
+        Ok(ast::Expression::ObjectAccess { path })
+    }
+
     fn parse_expression_identifier(&mut self) -> Result<ast::Expression, ParserError> {
         let token = self.consume(TokenKind::Identifier)?;
 
@@ -254,6 +301,7 @@ where
             // hmmmm
             "true" => Ok(ast::Expression::Literal(types::Literal::Boolean(true))),
             "false" => Ok(ast::Expression::Literal(types::Literal::Boolean(false))),
+            name if self.peek() == TokenKind::Dot => self.parse_object_access(name),
             name if self.peek() == TokenKind::OpenParen => self.parse_function_call(name, false),
             name => self.parse_variable(name),
         }?;

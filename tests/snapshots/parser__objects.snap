@@ -1,0 +1,183 @@
+---
+source: tests/parser.rs
+expression: statements
+---
+[
+    Let {
+        name: "y",
+        value: Literal(
+            Integer(
+                3,
+            ),
+        ),
+        is_mutable: false,
+    },
+    Let {
+        name: "another_object",
+        value: Object {
+            fields: {
+                "inner_value": Literal(
+                    Integer(
+                        32,
+                    ),
+                ),
+            },
+        },
+        is_mutable: false,
+    },
+    Let {
+        name: "x",
+        value: Object {
+            fields: {
+                "test": Literal(
+                    Integer(
+                        1,
+                    ),
+                ),
+                "test2": Literal(
+                    String(
+                        "testing",
+                    ),
+                ),
+                "test3": Variable(
+                    "y",
+                ),
+                "test4": Variable(
+                    "another_object",
+                ),
+                "test5": Object {
+                    fields: {
+                        "test6": Object {
+                            fields: {
+                                "test7": Literal(
+                                    Integer(
+                                        1999,
+                                    ),
+                                ),
+                            },
+                        },
+                    },
+                },
+            },
+        },
+        is_mutable: false,
+    },
+    Expression(
+        FunctionCall {
+            name: "print",
+            args: [
+                Variable(
+                    "x",
+                ),
+            ],
+        },
+    ),
+    Expression(
+        FunctionCall {
+            name: "print",
+            args: [
+                ObjectAccess {
+                    path: [
+                        "x",
+                        "test",
+                    ],
+                },
+            ],
+        },
+    ),
+    Expression(
+        FunctionCall {
+            name: "print",
+            args: [
+                ObjectAccess {
+                    path: [
+                        "x",
+                        "test2",
+                    ],
+                },
+            ],
+        },
+    ),
+    Expression(
+        FunctionCall {
+            name: "print",
+            args: [
+                ObjectAccess {
+                    path: [
+                        "x",
+                        "test3",
+                    ],
+                },
+            ],
+        },
+    ),
+    Expression(
+        FunctionCall {
+            name: "print",
+            args: [
+                ObjectAccess {
+                    path: [
+                        "x",
+                        "test4",
+                    ],
+                },
+            ],
+        },
+    ),
+    Expression(
+        FunctionCall {
+            name: "print",
+            args: [
+                ObjectAccess {
+                    path: [
+                        "x",
+                        "test4",
+                        "inner_value",
+                    ],
+                },
+            ],
+        },
+    ),
+    Expression(
+        FunctionCall {
+            name: "print",
+            args: [
+                ObjectAccess {
+                    path: [
+                        "x",
+                        "test5",
+                    ],
+                },
+            ],
+        },
+    ),
+    Expression(
+        FunctionCall {
+            name: "print",
+            args: [
+                ObjectAccess {
+                    path: [
+                        "x",
+                        "test5",
+                        "test6",
+                    ],
+                },
+            ],
+        },
+    ),
+    Expression(
+        FunctionCall {
+            name: "print",
+            args: [
+                ObjectAccess {
+                    path: [
+                        "x",
+                        "test5",
+                        "test6",
+                        "test7",
+                    ],
+                },
+            ],
+        },
+    ),
+]

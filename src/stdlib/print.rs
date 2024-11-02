@@ -8,6 +8,7 @@ pub fn print(args: Vec<VMValue>) -> Option<VMValue> {
             VMValue::Function(f) => {
                 print!("<function: {} - code len: {}>", f.name, f.code.len())
             }
+            VMValue::Object(object) => print!("{}", object.borrow()),
         }
     }
 

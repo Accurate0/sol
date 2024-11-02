@@ -23,6 +23,19 @@ pub enum Instruction {
         arg_count: u8,
         return_val: Register,
     },
+    AllocateObject {
+        dest: Register,
+    },
+    SetObjectField {
+        object: Register,
+        field: Register,
+        value: Register,
+    },
+    GetObjectField {
+        object: Register,
+        field: Register,
+        return_val: Register,
+    },
     LoadLiteral {
         dest: Register,
         src: LiteralId,

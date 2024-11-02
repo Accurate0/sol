@@ -27,6 +27,8 @@ pub enum TokenKind {
     Equal,
     NotEqual,
     Whitespace,
+    Colon,
+    Dot,
     EndOfLine,
     Not,
 
@@ -354,6 +356,22 @@ impl<'a> Cursor<'a> {
                     },
                 )
             }
+            ':' => Token::new(
+                TokenKind::Colon,
+                Span {
+                    start: self.current() - 1,
+                    end: self.current(),
+                    line: self.line,
+                },
+            ),
+            '.' => Token::new(
+                TokenKind::Dot,
+                Span {
+                    start: self.current() - 1,
+                    end: self.current(),
+                    line: self.line,
+                },
+            ),
             c if c.is_ascii_whitespace() => Token::new(
                 TokenKind::Whitespace,
                 Span {
