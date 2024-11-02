@@ -39,6 +39,8 @@ mod vm;
 //       And every time we need one, check this list
 // TODO: Allow anonymous functions
 // TODO: Allows functions in objects in some way
+// TODO: Multi-crate setup
+// TODO: LSP :)
 
 #[derive(clap::Parser, Debug)]
 #[command(version, about, long_about = None)]
