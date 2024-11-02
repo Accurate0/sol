@@ -1,14 +1,18 @@
 use crate::{
-    ast::{self, Literal},
     compiler,
+    types::{self, Literal},
 };
-use std::{borrow::Cow, cmp::Ordering};
+use std::{borrow::Cow, cmp::Ordering, collections::HashMap};
+
+pub struct Object<'a> {
+    fields: HashMap<VMValue<'a>, VMValue<'a>>,
+}
 
 #[derive(Default, Debug, Clone)]
 pub enum VMValue<'a> {
     #[default]
     Empty,
-    Literal(Cow<'a, ast::Literal>),
+    Literal(Cow<'a, types::Literal>),
     Function(&'a compiler::Function),
 }
 

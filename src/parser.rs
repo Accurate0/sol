@@ -1,6 +1,7 @@
 use crate::{
     ast::{self, Statement},
     lexer::{Span, Token, TokenKind},
+    types,
 };
 use std::{
     iter::Peekable,
@@ -142,15 +143,15 @@ where
         let text = self.text(&token);
 
         let expr = if text == "true" {
-            ast::Expression::Literal(ast::Literal::Boolean(true))
+            ast::Expression::Literal(types::Literal::Boolean(true))
         } else if text == "false" {
-            ast::Expression::Literal(ast::Literal::Boolean(false))
+            ast::Expression::Literal(types::Literal::Boolean(false))
         } else if text.starts_with('"') && text.ends_with('"') {
-            ast::Expression::Literal(ast::Literal::String(text[1..text.len() - 1].to_owned()))
+            ast::Expression::Literal(types::Literal::String(text[1..text.len() - 1].to_owned()))
         } else if text.contains('.') {
-            ast::Expression::Literal(ast::Literal::Float(text.parse()?))
+            ast::Expression::Literal(types::Literal::Float(text.parse()?))
         } else {
-            ast::Expression::Literal(ast::Literal::Integer(text.parse()?))
+            ast::Expression::Literal(types::Literal::Integer(text.parse()?))
         };
 
         Ok(expr)
@@ -251,8 +252,8 @@ where
 
         let expr = match self.text(&token) {
             // hmmmm
-            "true" => Ok(ast::Expression::Literal(ast::Literal::Boolean(true))),
-            "false" => Ok(ast::Expression::Literal(ast::Literal::Boolean(false))),
+            "true" => Ok(ast::Expression::Literal(types::Literal::Boolean(true))),
+            "false" => Ok(ast::Expression::Literal(types::Literal::Boolean(false))),
             name if self.peek() == TokenKind::OpenParen => self.parse_function_call(name, false),
             name => self.parse_variable(name),
         }?;

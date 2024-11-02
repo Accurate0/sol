@@ -7,23 +7,23 @@ macro_rules! impl_binary_op {
                 let rhs = rhs.as_ref();
 
                 match (lhs, rhs) {
-                    (ast::Literal::Float(lhs), ast::Literal::Float(rhs)) => {
+                    (types::Literal::Float(lhs), types::Literal::Float(rhs)) => {
                         $registers[*$dest as usize] =
-                            VMValue::Literal(Cow::Owned(ast::Literal::Float(lhs $x rhs)))
+                            VMValue::Literal(Cow::Owned(types::Literal::Float(lhs $x rhs)))
                     }
-                    (ast::Literal::Float(lhs), ast::Literal::Integer(rhs)) => {
+                    (types::Literal::Float(lhs), types::Literal::Integer(rhs)) => {
                         $registers[*$dest as usize] = VMValue::Literal(Cow::Owned(
-                            ast::Literal::Float(*lhs $x *rhs as f64),
+                            types::Literal::Float(*lhs $x *rhs as f64),
                         ))
                     }
-                    (ast::Literal::Integer(lhs), ast::Literal::Float(rhs)) => {
+                    (types::Literal::Integer(lhs), types::Literal::Float(rhs)) => {
                         $registers[*$dest as usize] = VMValue::Literal(Cow::Owned(
-                            ast::Literal::Float(*lhs as f64 $x *rhs),
+                            types::Literal::Float(*lhs as f64 $x *rhs),
                         ))
                     }
-                    (ast::Literal::Integer(lhs), ast::Literal::Integer(rhs)) => {
+                    (types::Literal::Integer(lhs), types::Literal::Integer(rhs)) => {
                         $registers[*$dest as usize] =
-                            VMValue::Literal(Cow::Owned(ast::Literal::Integer(lhs $x rhs)))
+                            VMValue::Literal(Cow::Owned(types::Literal::Integer(lhs $x rhs)))
                     }
 
                     _ => unreachable!(),
@@ -44,7 +44,7 @@ macro_rules! impl_binary_comparator {
             let is_equal = lhs $x rhs;
 
             $registers[*$dest as usize] =
-                VMValue::Literal(Cow::Owned(ast::Literal::Boolean(is_equal)))
+                VMValue::Literal(Cow::Owned(types::Literal::Boolean(is_equal)))
         }
     }
 }

@@ -22,6 +22,7 @@ mod macros;
 mod parser;
 mod scope;
 mod stdlib;
+mod types;
 mod vm;
 
 // TODO: Add objects, dynamically typed tables like lua? Special instructions for them

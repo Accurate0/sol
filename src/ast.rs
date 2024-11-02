@@ -1,4 +1,4 @@
-use std::fmt::Display;
+use crate::types;
 
 #[derive(Debug, PartialEq)]
 pub struct Function {
@@ -13,25 +13,6 @@ impl Function {
             name,
             parameters,
             body,
-        }
-    }
-}
-
-#[derive(Debug, PartialEq, Clone)]
-pub enum Literal {
-    String(String),
-    Float(f64),
-    Integer(i64),
-    Boolean(bool),
-}
-
-impl Display for Literal {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Literal::String(s) => write!(f, "{}", s),
-            Literal::Float(n) => write!(f, "{}", n),
-            Literal::Integer(n) => write!(f, "{}", n),
-            Literal::Boolean(b) => write!(f, "{}", b),
         }
     }
 }
@@ -118,7 +99,7 @@ pub enum Expression {
         lhs: Box<Expression>,
         rhs: Box<Expression>,
     },
-    Literal(Literal),
+    Literal(types::Literal),
     Variable(String),
     FunctionCall {
         name: String,

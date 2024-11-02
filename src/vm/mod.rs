@@ -1,9 +1,10 @@
+use crate::types::Literal;
 use crate::{
-    ast::{self, Literal},
     compiler::{CompiledProgram, Function},
     impl_binary_comparator, impl_binary_op,
     instructions::Instruction,
     stdlib::{NativeFunctionType, STANDARD_LIBRARY},
+    types,
 };
 use std::{borrow::Cow, collections::HashMap};
 use thiserror::Error;
@@ -35,7 +36,7 @@ pub struct VM {
     native_functions: HashMap<String, NativeFunctionType>,
     global_code: Vec<Instruction>,
     global_register_count: u8,
-    literals: Vec<ast::Literal>,
+    literals: Vec<types::Literal>,
 }
 
 impl VM {
@@ -330,7 +331,7 @@ impl VM {
 
                     match rhs {
                         VMValue::Literal(literal) => match literal.as_ref() {
-                            ast::Literal::Boolean(v) => {
+                            types::Literal::Boolean(v) => {
                                 register_window[*dest as usize] =
                                     VMValue::Literal(Cow::Owned(Literal::Boolean(!v)))
                             }
@@ -355,13 +356,13 @@ impl VM {
 
                     match rhs {
                         VMValue::Literal(literal) => match literal.as_ref() {
-                            ast::Literal::Float(v) => {
+                            types::Literal::Float(v) => {
                                 let new_value = -(*v);
                                 register_window[*dest as usize] =
                                     VMValue::Literal(Cow::Owned(Literal::Float(new_value)))
                             }
 
-                            ast::Literal::Integer(v) => {
+                            types::Literal::Integer(v) => {
                                 let new_value = -(*v);
                                 register_window[*dest as usize] =
                                     VMValue::Literal(Cow::Owned(Literal::Integer(new_value)))

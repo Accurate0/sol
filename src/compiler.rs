@@ -1,8 +1,9 @@
 use crate::{
-    ast::{self, Expression, Literal, Statement},
+    ast::{self, Expression, Statement},
     instructions::{FunctionId, Instruction, JumpOffset, LiteralId, Register},
     parser::ParserError,
     scope::{Scope, ScopeType},
+    types::Literal,
 };
 use std::{cell::RefCell, num::TryFromIntError};
 use thiserror::Error;

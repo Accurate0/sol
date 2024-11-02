@@ -1,9 +1,9 @@
 use insta::assert_compact_debug_snapshot;
 use plrs::{
-    ast,
     compiler::Compiler,
     lexer::Lexer,
     parser::Parser,
+    types,
     vm::{VMValue, VM},
 };
 
@@ -124,7 +124,7 @@ fn native_function_with_return_value() {
 
     let vm = VM::new(program).define_native_function("test".to_owned(), |_| {
         Some(VMValue::Literal(std::borrow::Cow::Owned(
-            ast::Literal::Boolean(true),
+            types::Literal::Boolean(true),
         )))
     });
     let register_state = vm.run_with_registers_returned();

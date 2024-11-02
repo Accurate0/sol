@@ -6,4 +6,5 @@ pub mod macros;
 pub mod parser;
 pub mod scope;
 pub mod stdlib;
+pub mod types;
 pub mod vm;
