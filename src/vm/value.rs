@@ -1,8 +1,12 @@
 use crate::{
     compiler,
-    types::{self, Literal, Object},
+    types::{self, Literal, Object, ObjectValue},
 };
 use std::{borrow::Cow, cell::RefCell, cmp::Ordering, rc::Rc};
+
+// we reference count all objects :)
+pub type VMObject = Rc<RefCell<Object>>;
+pub type VMObjectValue = Rc<RefCell<ObjectValue>>;
 
 // FIXME: is this too big?
 #[derive(Default, Debug, Clone)]
@@ -10,7 +14,7 @@ pub enum VMValue<'a> {
     #[default]
     Empty,
     Literal(Cow<'a, types::Literal>),
-    Object(Rc<RefCell<Object>>),
+    Object(VMObject),
     Function(&'a compiler::Function),
 }
 

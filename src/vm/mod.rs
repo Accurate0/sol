@@ -408,7 +408,7 @@ impl VM {
                 Instruction::Jump { offset } => ip += *offset as usize,
                 Instruction::JumpReverse { offset } => ip -= *offset as usize,
                 Instruction::AllocateObject { dest } => {
-                    register_window[*dest as usize] = VMValue::Object(Object::new());
+                    register_window[*dest as usize] = VMValue::Object(Object::create_for_vm());
                     ip += 1;
                 }
                 Instruction::SetObjectField {

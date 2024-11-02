@@ -25,6 +25,8 @@ mod stdlib;
 mod types;
 mod vm;
 
+// TODO: Allow object.value = 4; assignments
+// TODO: Use Rc for function references?
 // TODO: Add basic type checking - should be done in same pass as parser?
 // TODO: Better dump printing
 // TODO: Add line numbers to all errors?

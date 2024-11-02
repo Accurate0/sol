@@ -1,6 +1,6 @@
-use std::{cell::RefCell, fmt::Display, rc::Rc};
-
+use crate::vm::{VMObject, VMObjectValue};
 use ordermap::OrderMap;
+use std::{fmt::Display, rc::Rc};
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum Literal {
@@ -23,7 +23,7 @@ impl Display for Literal {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Object {
-    fields: OrderMap<String, Rc<RefCell<ObjectValue>>>,
+    fields: OrderMap<String, VMObjectValue>,
 }
 
 // FIXME: nesting leads to extra quotes
@@ -36,7 +36,7 @@ impl Display for Object {
 }
 
 impl Object {
-    pub fn new() -> Rc<RefCell<Self>> {
+    pub fn create_for_vm() -> VMObject {
         Rc::new(
             Self {
                 fields: Default::default(),
@@ -45,11 +45,11 @@ impl Object {
         )
     }
 
-    pub fn insert(&mut self, k: String, v: Rc<RefCell<ObjectValue>>) {
+    pub fn insert(&mut self, k: String, v: VMObjectValue) {
         self.fields.insert(k, v);
     }
 
-    pub fn index(&self, idx: &Literal) -> Option<Rc<RefCell<ObjectValue>>> {
+    pub fn index(&self, idx: &Literal) -> Option<VMObjectValue> {
         match idx {
             Literal::String(s) => self.fields.get(s).cloned(),
             _ => unreachable!(),
@@ -59,7 +59,7 @@ impl Object {
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum ObjectValue {
-    Object(Rc<RefCell<Object>>),
+    Object(VMObject),
     Literal(Literal),
     // object values use function indexes?
     Function(usize),
