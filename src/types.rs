@@ -1,4 +1,4 @@
-use crate::vm::{VMObject, VMObjectValue};
+use crate::vm::{VMFunction, VMObject, VMObjectValue};
 use ordermap::OrderMap;
 use std::{fmt::Display, rc::Rc};
 
@@ -62,7 +62,7 @@ pub enum ObjectValue {
     Object(VMObject),
     Literal(Literal),
     // object values use function indexes?
-    Function(usize),
+    Function(VMFunction),
 }
 
 impl Display for ObjectValue {
@@ -70,7 +70,7 @@ impl Display for ObjectValue {
         match self {
             ObjectValue::Object(rc) => write!(f, "{}", rc.borrow()),
             ObjectValue::Literal(literal) => write!(f, "{}", literal),
-            ObjectValue::Function(fn_id) => write!(f, "fn:{}", fn_id),
+            ObjectValue::Function(func) => write!(f, "{}", func),
         }
     }
 }

@@ -3,7 +3,7 @@ pub type LiteralId = u16;
 pub type FunctionId = u16;
 pub type JumpOffset = u16;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Copy, Clone)]
 pub enum Instruction {
     Copy {
         dest: Register,

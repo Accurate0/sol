@@ -1,20 +1,22 @@
+use crate::compiler;
 use crate::types::{Literal, Object, ObjectValue};
 use crate::{
-    compiler::{CompiledProgram, Function},
+    compiler::CompiledProgram,
     impl_binary_comparator, impl_binary_op,
     instructions::Instruction,
     stdlib::{NativeFunctionType, STANDARD_LIBRARY},
     types,
 };
-use itertools::Itertools;
 use std::rc::Rc;
 use std::{borrow::Cow, collections::HashMap};
 use thiserror::Error;
 
+mod registers;
 mod value;
+pub use registers::*;
 pub use value::*;
 
-struct SavedCallFrame<'a> {
+struct SavedCallFrame {
     // FIXME: we could store the register array with each callframe
     // right now each function is allowed 256 registers by the compiler
     // but the VM only has 256 total, a deep call stack will easily go
@@ -22,7 +24,7 @@ struct SavedCallFrame<'a> {
     // the right number of registers for each function
     // or make the window resizable... abstract the window away and resize on access
     pub ip: usize,
-    pub code: &'a Vec<Instruction>,
+    pub function: VMFunction,
     pub register_count: u8,
     pub function_return_value: u8,
 }
@@ -34,20 +36,27 @@ pub enum ExecutionError {
 }
 
 pub struct VM {
-    functions: Vec<Function>,
+    functions: Vec<VMFunction>,
     native_functions: HashMap<String, NativeFunctionType>,
-    global_code: Vec<Instruction>,
-    global_register_count: u8,
+    global_function: VMFunction,
     literals: Vec<types::Literal>,
 }
 
 impl VM {
     pub fn new(compiled_program: CompiledProgram) -> Self {
         Self {
-            functions: compiled_program.functions,
+            functions: compiled_program
+                .functions
+                .into_iter()
+                .map(Rc::new)
+                .collect(),
             native_functions: Default::default(),
-            global_code: compiled_program.global_code,
-            global_register_count: compiled_program.global_register_count,
+            global_function: compiler::Function {
+                name: "global".to_owned(),
+                code: compiled_program.global_code,
+                register_count: compiled_program.global_register_count,
+            }
+            .into(),
             literals: compiled_program.literals,
         }
     }
@@ -59,8 +68,8 @@ impl VM {
         self
     }
 
-    fn print_registers(window: &[VMValue]) {
-        for (i, item) in window.iter().enumerate() {
+    fn print_registers(window: &Registers<'_>) {
+        for (i, item) in window.regs().iter().enumerate() {
             match item {
                 VMValue::Empty => {}
                 VMValue::Literal(l) => tracing::debug!("{i} {:?}", l),
@@ -72,69 +81,68 @@ impl VM {
         tracing::debug!("");
     }
 
-    pub fn run_with_registers_returned(&self) -> Result<Vec<VMValue>, ExecutionError> {
-        let mut registers = Vec::<VMValue>::with_capacity(u8::MAX as usize);
-        registers.resize_with(u8::MAX as usize, Default::default);
+    pub fn run_with_registers_returned(&self) -> Result<Registers, ExecutionError> {
+        let mut registers = Registers::default();
 
         let mut saved_call_frames = Vec::<SavedCallFrame>::new();
-        let mut current_code = &self.global_code;
-        let mut register_window = &mut registers[0..];
-        let mut base_register = 0;
+        let mut current_function = self.global_function.clone();
 
         let mut ip = 0;
         loop {
-            if ip >= current_code.len() {
+            if ip >= current_function.code.len() {
                 break;
             }
 
-            let current_instruction = &current_code[ip];
+            let current_instruction = current_function.code[ip];
             tracing::debug!("executing: {:?}", current_instruction);
             // tracing::info!("ip: {:?}", ip);
             // tracing::info!("code: {:?}", current_code);
-            // tracing::info!("reg: {:?}", register_window);
+            // tracing::info!("reg: {:?}", registers);
             // tracing::info!("base_reg: {:?}", base_register);
 
             match current_instruction {
                 Instruction::FunctionReturn => {
                     if let Some(saved_call_frame) = saved_call_frames.pop() {
+                        let mut base_register = registers.base_register();
                         if let Some(current_call_frame) = saved_call_frames.last() {
                             base_register -= current_call_frame.register_count as usize;
                         } else {
-                            base_register -= self.global_register_count as usize;
+                            base_register -= self.global_function.register_count as usize;
                         }
 
-                        register_window = &mut registers[base_register..];
+                        registers.update_base_register(base_register);
 
                         ip = saved_call_frame.ip + 1;
-                        current_code = saved_call_frame.code;
+                        current_function = saved_call_frame.function;
                         continue;
                     };
                 }
                 Instruction::Return { val } => {
                     if let Some(saved_call_frame) = saved_call_frames.pop() {
+                        let mut base_register = registers.base_register();
                         if let Some(current_call_frame) = saved_call_frames.last() {
                             base_register -= current_call_frame.register_count as usize;
                         } else {
-                            base_register -= self.global_register_count as usize;
+                            base_register -= self.global_function.register_count as usize;
                         }
 
                         let register_to_copy_to = saved_call_frame.function_return_value;
-                        let register_to_copy_from = *val;
+                        let register_to_copy_from = val;
 
-                        let from = register_window[register_to_copy_from as usize].clone();
+                        let from = registers[register_to_copy_from].clone();
 
-                        register_window = &mut registers[base_register..];
+                        registers.update_base_register(base_register);
 
-                        register_window[register_to_copy_to as usize] = from;
+                        registers[register_to_copy_to] = from;
 
                         ip = saved_call_frame.ip + 1;
-                        current_code = saved_call_frame.code;
+                        current_function = saved_call_frame.function;
                         continue;
                     };
                 }
                 Instruction::LoadFunction { dest, src } => {
-                    let func = &self.functions[*src as usize];
-                    register_window[*dest as usize] = VMValue::Function(func);
+                    let func = self.functions[src as usize].clone();
+                    registers[dest] = VMValue::Function(func);
 
                     ip += 1;
                 }
@@ -143,7 +151,7 @@ impl VM {
                     arg_count,
                     return_val,
                 } => {
-                    let register = &register_window[*src as usize];
+                    let register = &registers[src];
                     let function_name = match register {
                         VMValue::Literal(cow) => match cow.as_ref() {
                             Literal::String(s) => s,
@@ -176,11 +184,11 @@ impl VM {
 
                     let native_function = native_function.unwrap();
 
-                    let arg_start = *src as usize - *arg_count as usize;
-                    let arg_end = *src as usize;
+                    let arg_start = src - arg_count;
+                    let arg_end = src;
 
-                    let mut arg_values = Vec::with_capacity(arg_end - arg_start);
-                    let registers_to_copy = &register_window[arg_start..arg_end];
+                    let mut arg_values = Vec::with_capacity((arg_end - arg_start) as usize);
+                    let registers_to_copy = &registers[arg_start..arg_end];
                     for register in registers_to_copy {
                         arg_values.push(register.clone());
                     }
@@ -188,7 +196,7 @@ impl VM {
                     // TODO: return value?
                     let return_value = (native_function)(arg_values);
                     if let Some(return_value) = return_value {
-                        register_window[*return_val as usize] = return_value
+                        registers[return_val] = return_value
                     }
 
                     ip += 1;
@@ -198,9 +206,9 @@ impl VM {
                     arg_count,
                     return_val,
                 } => {
-                    let func = &register_window[*src as usize];
+                    let func = &registers[src];
                     let func = match func {
-                        VMValue::Function(f) => f,
+                        VMValue::Function(f) => f.clone(),
                         _ => unreachable!(),
                     };
 
@@ -208,135 +216,138 @@ impl VM {
                     // eprintln!("DEBUGPRINT[3]: vm.rs:124: arg_end={:#?}", arg_end);
                     // tracing::info!("func: {:?}", func);
 
-                    let old_code = current_code;
+                    let old_function = current_function;
                     let old_ip = ip;
 
-                    current_code = &func.code;
+                    current_function = func.clone();
                     ip = 0;
 
+                    let mut base_register = registers.base_register();
                     let old_base = base_register;
-                    let register_count = &func.register_count;
+                    let register_count = func.register_count;
                     if let Some(current_call_frame) = saved_call_frames.last() {
                         base_register += current_call_frame.register_count as usize;
                     } else {
-                        base_register += self.global_register_count as usize;
+                        base_register += self.global_function.register_count as usize;
                     }
 
-                    let (old_function, new_function) = registers.split_at_mut(base_register);
+                    registers.update_base_register(base_register);
+
+                    let (old_function_regs, new_function_regs) =
+                        registers.regs_mut().split_at_mut(base_register);
 
                     // tracing::warn!("FUNCTION CALL: OLD");
                     // Self::print_registers(old_function);
 
-                    let arg_start = old_base + *src as usize - *arg_count as usize;
-                    let arg_end = old_base + *src as usize;
-                    let registers_to_copy = &old_function[arg_start..arg_end];
+                    let arg_start = old_base + src as usize - arg_count as usize;
+                    let arg_end = old_base + src as usize;
+                    let registers_to_copy = &old_function_regs[arg_start..arg_end];
 
                     // tracing::warn!("FUNCTION CALL: COPY");
                     // Self::print_registers(registers_to_copy);
 
                     for (index, register) in registers_to_copy.iter().enumerate() {
-                        new_function[index + 1] = register.clone();
+                        new_function_regs[index + 1] = register.clone();
                     }
 
                     // tracing::warn!("FUNCTION CALL: NEW");
                     // Self::print_registers(new_function);
 
-                    register_window = &mut registers[base_register..];
+                    registers.update_base_register(base_register);
                     saved_call_frames.push(SavedCallFrame {
                         ip: old_ip,
-                        code: old_code,
-                        register_count: *register_count,
-                        function_return_value: *return_val,
+                        function: old_function,
+                        register_count,
+                        function_return_value: return_val,
                     });
 
-                    // tracing::warn!("register: {:?}", register_window);
+                    // tracing::warn!("register: {:?}", registers);
                     // tracing::warn!("register: {:?}", self.global_register_count);
                     // tracing::warn!("register: {:?}", register_count);
 
-                    Self::print_registers(register_window);
+                    Self::print_registers(&registers);
                     continue;
                 }
 
                 Instruction::LoadLiteral { dest, src } => {
-                    let literal = &self.literals[*src as usize];
-                    register_window[*dest as usize] = VMValue::Literal(Cow::Borrowed(literal));
+                    let literal = &self.literals[src as usize];
+                    registers[dest] = VMValue::Literal(Cow::Borrowed(literal));
 
                     ip += 1;
                 }
 
                 Instruction::Add { dest, lhs, rhs } => {
-                    impl_binary_op!(register_window, dest, lhs, +, rhs);
+                    impl_binary_op!(registers, dest, lhs, +, rhs);
 
                     ip += 1;
                 }
 
                 Instruction::Sub { dest, lhs, rhs } => {
-                    impl_binary_op!(register_window, dest, lhs, -, rhs);
+                    impl_binary_op!(registers, dest, lhs, -, rhs);
 
                     ip += 1;
                 }
 
                 Instruction::Mul { dest, lhs, rhs } => {
-                    impl_binary_op!(register_window, dest, lhs, *, rhs);
+                    impl_binary_op!(registers, dest, lhs, *, rhs);
 
                     ip += 1;
                 }
 
                 Instruction::Div { dest, lhs, rhs } => {
-                    impl_binary_op!(register_window, dest, lhs, /, rhs);
+                    impl_binary_op!(registers, dest, lhs, /, rhs);
 
                     ip += 1;
                 }
 
                 Instruction::Equals { dest, lhs, rhs } => {
-                    impl_binary_comparator!(register_window, dest, lhs, ==, rhs);
+                    impl_binary_comparator!(registers, dest, lhs, ==, rhs);
 
                     ip += 1;
                 }
 
                 Instruction::NotEquals { dest, lhs, rhs } => {
-                    impl_binary_comparator!(register_window, dest, lhs, !=, rhs);
+                    impl_binary_comparator!(registers, dest, lhs, !=, rhs);
 
                     ip += 1;
                 }
 
                 Instruction::GreaterThan { dest, lhs, rhs } => {
-                    impl_binary_comparator!(register_window, dest, lhs, >, rhs);
+                    impl_binary_comparator!(registers, dest, lhs, >, rhs);
 
                     ip += 1;
                 }
 
                 Instruction::GreaterThanOrEquals { dest, lhs, rhs } => {
-                    impl_binary_comparator!(register_window, dest, lhs, >=, rhs);
+                    impl_binary_comparator!(registers, dest, lhs, >=, rhs);
 
                     ip += 1;
                 }
 
                 Instruction::LessThan { dest, lhs, rhs } => {
-                    impl_binary_comparator!(register_window, dest, lhs, <, rhs);
+                    impl_binary_comparator!(registers, dest, lhs, <, rhs);
 
                     ip += 1;
                 }
 
                 Instruction::LessThanOrEquals { dest, lhs, rhs } => {
-                    impl_binary_comparator!(register_window, dest, lhs, <=, rhs);
+                    impl_binary_comparator!(registers, dest, lhs, <=, rhs);
 
                     ip += 1;
                 }
 
                 Instruction::Copy { dest, src } => {
-                    register_window[*dest as usize] = register_window[*src as usize].clone();
+                    registers[dest] = registers[src].clone();
 
                     ip += 1;
                 }
                 Instruction::PrefixNot { dest, rhs } => {
-                    let rhs = &register_window[*rhs as usize];
+                    let rhs = &registers[rhs];
 
                     match rhs {
                         VMValue::Literal(literal) => match literal.as_ref() {
                             types::Literal::Boolean(v) => {
-                                register_window[*dest as usize] =
-                                    VMValue::Literal(Cow::Owned(Literal::Boolean(!v)))
+                                registers[dest] = VMValue::Literal(Cow::Owned(Literal::Boolean(!v)))
                             }
 
                             _ => {
@@ -355,19 +366,19 @@ impl VM {
                     ip += 1;
                 }
                 Instruction::PrefixSub { dest, rhs } => {
-                    let rhs = &register_window[*rhs as usize];
+                    let rhs = &registers[rhs];
 
                     match rhs {
                         VMValue::Literal(literal) => match literal.as_ref() {
                             types::Literal::Float(v) => {
                                 let new_value = -(*v);
-                                register_window[*dest as usize] =
+                                registers[dest] =
                                     VMValue::Literal(Cow::Owned(Literal::Float(new_value)))
                             }
 
                             types::Literal::Integer(v) => {
                                 let new_value = -(*v);
-                                register_window[*dest as usize] =
+                                registers[dest] =
                                     VMValue::Literal(Cow::Owned(Literal::Integer(new_value)))
                             }
 
@@ -387,7 +398,7 @@ impl VM {
                     ip += 1;
                 }
                 Instruction::JumpIfFalse { src, offset } => {
-                    let register_value = &register_window[*src as usize];
+                    let register_value = &registers[src];
                     // FIXME: are we type checked?
                     match register_value {
                         VMValue::Object(_) | VMValue::Function(_) | VMValue::Empty => {
@@ -398,17 +409,17 @@ impl VM {
                                 if *b {
                                     ip += 1;
                                 } else {
-                                    ip += *offset as usize;
+                                    ip += offset as usize;
                                 }
                             }
                             _ => unreachable!(),
                         },
                     }
                 }
-                Instruction::Jump { offset } => ip += *offset as usize,
-                Instruction::JumpReverse { offset } => ip -= *offset as usize,
+                Instruction::Jump { offset } => ip += offset as usize,
+                Instruction::JumpReverse { offset } => ip -= offset as usize,
                 Instruction::AllocateObject { dest } => {
-                    register_window[*dest as usize] = VMValue::Object(Object::create_for_vm());
+                    registers[dest] = VMValue::Object(Object::create_for_vm());
                     ip += 1;
                 }
                 Instruction::SetObjectField {
@@ -416,12 +427,12 @@ impl VM {
                     field,
                     value,
                 } => {
-                    let obj = match &register_window[*object as usize] {
+                    let obj = match &registers[object] {
                         VMValue::Object(object) => object,
                         _ => unreachable!(),
                     };
 
-                    let key = match &register_window[*field as usize] {
+                    let key = match &registers[field] {
                         VMValue::Literal(lit) => match lit.as_ref() {
                             Literal::String(s) => s.clone(),
                             _ => unreachable!(),
@@ -429,16 +440,10 @@ impl VM {
                         _ => unreachable!(),
                     };
 
-                    let value = match &register_window[*value as usize] {
+                    let value = match &registers[value] {
                         VMValue::Literal(lit) => ObjectValue::Literal(lit.as_ref().clone()),
                         VMValue::Object(object) => ObjectValue::Object(object.clone()),
-                        VMValue::Function(f) => ObjectValue::Function(
-                            self.functions
-                                .iter()
-                                .find_position(|func| func.name == f.name)
-                                .unwrap()
-                                .0,
-                        ),
+                        VMValue::Function(f) => ObjectValue::Function(f.clone()),
                         _ => unreachable!(),
                     };
 
@@ -450,13 +455,13 @@ impl VM {
                     field,
                     return_val,
                 } => {
-                    let key = match &register_window[*field as usize] {
+                    let key = match &registers[field] {
                         VMValue::Literal(lit) => lit.as_ref(),
                         _ => unreachable!(),
                     };
 
                     let register_value = {
-                        let obj = match register_window[*object as usize] {
+                        let obj = match registers[object] {
                             VMValue::Object(ref object) => object.clone(),
                             _ => unreachable!(),
                         };
@@ -473,21 +478,19 @@ impl VM {
                                     ObjectValue::Literal(literal) => {
                                         VMValue::Literal(Cow::Owned(literal.clone()))
                                     }
-                                    ObjectValue::Function(f_id) => {
-                                        VMValue::Function(self.functions.get(*f_id).unwrap())
-                                    }
+                                    ObjectValue::Function(func) => VMValue::Function(func.clone()),
                                 }
                             }
                             None => VMValue::Empty,
                         }
                     };
 
-                    register_window[*return_val as usize] = register_value;
+                    registers[return_val] = register_value;
                     ip += 1;
                 }
             }
 
-            Self::print_registers(register_window);
+            Self::print_registers(&registers);
         }
 
         // dbg!(registers);

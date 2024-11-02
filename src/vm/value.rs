@@ -7,6 +7,7 @@ use std::{borrow::Cow, cell::RefCell, cmp::Ordering, rc::Rc};
 // we reference count all objects :)
 pub type VMObject = Rc<RefCell<Object>>;
 pub type VMObjectValue = Rc<RefCell<ObjectValue>>;
+pub type VMFunction = Rc<compiler::Function>;
 
 // FIXME: is this too big?
 #[derive(Default, Debug, Clone)]
@@ -15,7 +16,7 @@ pub enum VMValue<'a> {
     Empty,
     Literal(Cow<'a, types::Literal>),
     Object(VMObject),
-    Function(&'a compiler::Function),
+    Function(VMFunction),
 }
 
 impl PartialEq for VMValue<'_> {

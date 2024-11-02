@@ -5,7 +5,7 @@ use crate::{
     scope::{Scope, ScopeType},
     types::Literal,
 };
-use std::{cell::RefCell, num::TryFromIntError};
+use std::{cell::RefCell, fmt::Display, num::TryFromIntError};
 use thiserror::Error;
 
 impl From<ParserError> for CompilerError {
@@ -41,6 +41,17 @@ pub struct Function {
     pub name: String,
     pub code: Vec<Instruction>,
     pub register_count: u8,
+}
+
+impl Display for Function {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "<function: {} - code len: {}>",
+            self.name,
+            self.code.len()
+        )
+    }
 }
 
 #[derive(Debug)]
