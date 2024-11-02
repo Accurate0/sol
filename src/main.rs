@@ -49,9 +49,9 @@ struct Args {
 
 #[derive(Subcommand, Debug, Clone)]
 enum Commands {
-    Run {
-        file: String,
-    },
+    /// run a program file
+    Run { file: String },
+    /// dump internal state
     Dump {
         file: String,
         #[arg(short, long, default_value_t, value_enum)]
