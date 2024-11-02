@@ -601,6 +601,54 @@ where
         Ok(())
     }
 
+    pub fn compile_object_mutation(
+        &mut self,
+        path: &ast::Expression,
+        value: &ast::Expression,
+    ) -> Result<(), CompilerError> {
+        let path = match path {
+            Expression::ObjectAccess { path } => path,
+            _ => unreachable!(),
+        };
+
+        let register = self.get_register();
+        let base_obj = path.first().unwrap();
+        let mut obj_reg = self.compile_expression(&Expression::Variable(base_obj.to_string()))?;
+
+        for path_value in path.iter().skip(1).take(path.len() - 2) {
+            let path_reg = self.compile_expression(&Expression::Literal(Literal::String(
+                path_value.to_string(),
+            )))?;
+
+            let instruction = Instruction::GetObjectField {
+                object: obj_reg,
+                field: path_reg,
+                return_val: register,
+            };
+
+            self.bytecode.borrow_mut().push(instruction);
+
+            obj_reg = register;
+        }
+
+        let last = path.last().unwrap();
+
+        let last_reg =
+            self.compile_expression(&Expression::Literal(Literal::String(last.to_string())))?;
+
+        let value = self.compile_expression(value)?;
+
+        let instruction = Instruction::SetObjectField {
+            object: obj_reg,
+            field: last_reg,
+            value,
+        };
+
+        self.bytecode.borrow_mut().push(instruction);
+
+        Ok(())
+    }
+
     pub fn compile_statement(&mut self, statement: &Statement) -> Result<(), CompilerError> {
         match statement {
             // kinda sus?
@@ -622,6 +670,7 @@ where
             Statement::Return(expression) => self.compile_return(expression),
             Statement::Loop { body } => self.compile_loop(body),
             Statement::Break => self.compile_break(),
+            Statement::ObjectMutation { path, value } => self.compile_object_mutation(path, value),
         }
     }
 }

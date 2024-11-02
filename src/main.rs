@@ -25,7 +25,6 @@ mod stdlib;
 mod types;
 mod vm;
 
-// TODO: Allow object.value = 4; assignments
 // TODO: Add basic type checking - should be done in same pass as parser?
 // TODO: Better dump printing
 // TODO: Add line numbers to all errors?
@@ -38,6 +37,8 @@ mod vm;
 //       Find a way to reclaim registers once they are proved unused
 //       Collect a list of registers as we parse that won't be reused in a scope
 //       And every time we need one, check this list
+// TODO: Allow anonymous functions
+// TODO: Allows functions in objects in some way
 
 #[derive(clap::Parser, Debug)]
 #[command(version, about, long_about = None)]

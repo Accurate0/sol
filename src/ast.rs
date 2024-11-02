@@ -33,6 +33,10 @@ pub enum Statement {
         name: String,
         value: Box<Expression>,
     },
+    ObjectMutation {
+        path: Expression,
+        value: Box<Expression>,
+    },
     If {
         condition: Box<Expression>,
         body: Box<Statement>,

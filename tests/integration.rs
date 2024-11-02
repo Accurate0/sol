@@ -6,7 +6,11 @@ use std::{path::PathBuf, process::Command};
 #[rstest]
 fn run_success(#[files("tests/files/success/*.rl")] path: PathBuf) {
     let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
-    let cmd = cmd.arg("run").arg(&path).env("NO_COLOR", "true");
+    let cmd = cmd
+        .arg("run")
+        .arg(&path)
+        .env("NO_COLOR", "true")
+        .env("PLRS_LOG", "info");
 
     let output = cmd.output().unwrap();
 
@@ -24,7 +28,11 @@ fn run_success(#[files("tests/files/success/*.rl")] path: PathBuf) {
 #[rstest]
 fn run_fail(#[files("tests/files/fail/*.rl")] path: PathBuf) {
     let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
-    let cmd = cmd.arg("run").arg(&path).env("NO_COLOR", "true");
+    let cmd = cmd
+        .arg("run")
+        .arg(&path)
+        .env("NO_COLOR", "true")
+        .env("PLRS_LOG", "info");
 
     let output = cmd.output().unwrap();
 

@@ -1,0 +1,5 @@
+---
+source: tests/integration.rs
+expression: output
+---
+ERROR plrs: variable 'test' not found in scope

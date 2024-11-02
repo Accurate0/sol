@@ -327,6 +327,21 @@ where
         Ok(ast::Statement::Break)
     }
 
+    fn parse_object_mutation(&mut self, first: &str) -> Result<ast::Statement, ParserError> {
+        let object_access = self.parse_object_access(first)?;
+
+        self.consume(TokenKind::Assignment)?;
+
+        let expr = self.parse_expression(0)?;
+
+        self.consume(TokenKind::EndOfLine)?;
+
+        Ok(ast::Statement::ObjectMutation {
+            path: object_access,
+            value: expr.into(),
+        })
+    }
+
     fn parse_statement_identifier(&mut self) -> Result<ast::Statement, ParserError> {
         let identifier = self.consume(TokenKind::Identifier)?;
         match self.text(&identifier) {
@@ -340,6 +355,7 @@ where
             name if self.peek() == TokenKind::OpenParen => Ok(ast::Statement::Expression(
                 self.parse_function_call(name, true)?,
             )),
+            name if self.peek() == TokenKind::Dot => self.parse_object_mutation(name),
             name if self.peek() == TokenKind::Assignment => self.parse_let_mutation(name),
             name => Ok(ast::Statement::Expression(self.parse_variable(name)?)),
         }
