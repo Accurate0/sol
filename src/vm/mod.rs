@@ -8,8 +8,8 @@ use crate::{
 use std::{borrow::Cow, collections::HashMap};
 use thiserror::Error;
 
-mod register;
-pub use register::*;
+mod value;
+pub use value::*;
 
 struct SavedCallFrame<'a> {
     // FIXME: we could store the register array with each callframe
@@ -56,20 +56,20 @@ impl VM {
         self
     }
 
-    fn print_registers(window: &[RegisterValue]) {
+    fn print_registers(window: &[VMValue]) {
         for (i, item) in window.iter().enumerate() {
             match item {
-                RegisterValue::Empty => {}
-                RegisterValue::Literal(l) => tracing::debug!("{i} {:?}", l),
-                RegisterValue::Function(f) => tracing::debug!("{i} {:?}", f.name),
+                VMValue::Empty => {}
+                VMValue::Literal(l) => tracing::debug!("{i} {:?}", l),
+                VMValue::Function(f) => tracing::debug!("{i} {:?}", f.name),
             }
         }
 
         tracing::debug!("");
     }
 
-    pub fn run_with_registers_returned(&self) -> Result<Vec<RegisterValue>, ExecutionError> {
-        let mut registers = Vec::<RegisterValue>::with_capacity(u8::MAX as usize);
+    pub fn run_with_registers_returned(&self) -> Result<Vec<VMValue>, ExecutionError> {
+        let mut registers = Vec::<VMValue>::with_capacity(u8::MAX as usize);
         registers.resize_with(u8::MAX as usize, Default::default);
 
         let mut saved_call_frames = Vec::<SavedCallFrame>::new();
@@ -130,7 +130,7 @@ impl VM {
                 }
                 Instruction::LoadFunction { dest, src } => {
                     let func = &self.functions[*src as usize];
-                    register_window[*dest as usize] = RegisterValue::Function(func);
+                    register_window[*dest as usize] = VMValue::Function(func);
 
                     ip += 1;
                 }
@@ -141,7 +141,7 @@ impl VM {
                 } => {
                     let register = &register_window[*src as usize];
                     let function_name = match register {
-                        RegisterValue::Literal(cow) => match cow.as_ref() {
+                        VMValue::Literal(cow) => match cow.as_ref() {
                             Literal::String(s) => s,
                             _ => {
                                 return Err(ExecutionError::InvalidOperation {
@@ -196,7 +196,7 @@ impl VM {
                 } => {
                     let func = &register_window[*src as usize];
                     let func = match func {
-                        RegisterValue::Function(f) => f,
+                        VMValue::Function(f) => f,
                         _ => unreachable!(),
                     };
 
@@ -255,8 +255,7 @@ impl VM {
 
                 Instruction::LoadLiteral { dest, src } => {
                     let literal = &self.literals[*src as usize];
-                    register_window[*dest as usize] =
-                        RegisterValue::Literal(Cow::Borrowed(literal));
+                    register_window[*dest as usize] = VMValue::Literal(Cow::Borrowed(literal));
 
                     ip += 1;
                 }
@@ -330,10 +329,10 @@ impl VM {
                     let rhs = &register_window[*rhs as usize];
 
                     match rhs {
-                        RegisterValue::Literal(literal) => match literal.as_ref() {
+                        VMValue::Literal(literal) => match literal.as_ref() {
                             ast::Literal::Boolean(v) => {
                                 register_window[*dest as usize] =
-                                    RegisterValue::Literal(Cow::Owned(Literal::Boolean(!v)))
+                                    VMValue::Literal(Cow::Owned(Literal::Boolean(!v)))
                             }
 
                             _ => {
@@ -355,17 +354,17 @@ impl VM {
                     let rhs = &register_window[*rhs as usize];
 
                     match rhs {
-                        RegisterValue::Literal(literal) => match literal.as_ref() {
+                        VMValue::Literal(literal) => match literal.as_ref() {
                             ast::Literal::Float(v) => {
                                 let new_value = -(*v);
                                 register_window[*dest as usize] =
-                                    RegisterValue::Literal(Cow::Owned(Literal::Float(new_value)))
+                                    VMValue::Literal(Cow::Owned(Literal::Float(new_value)))
                             }
 
                             ast::Literal::Integer(v) => {
                                 let new_value = -(*v);
                                 register_window[*dest as usize] =
-                                    RegisterValue::Literal(Cow::Owned(Literal::Integer(new_value)))
+                                    VMValue::Literal(Cow::Owned(Literal::Integer(new_value)))
                             }
 
                             _ => {
@@ -387,8 +386,8 @@ impl VM {
                     let register_value = &register_window[*src as usize];
                     // FIXME: are we type checked?
                     match register_value {
-                        RegisterValue::Function(_) | RegisterValue::Empty => unreachable!(),
-                        RegisterValue::Literal(l) => match l.as_ref() {
+                        VMValue::Function(_) | VMValue::Empty => unreachable!(),
+                        VMValue::Literal(l) => match l.as_ref() {
                             Literal::Boolean(b) => {
                                 if *b {
                                     ip += 1;

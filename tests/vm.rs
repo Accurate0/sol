@@ -4,7 +4,7 @@ use plrs::{
     compiler::Compiler,
     lexer::Lexer,
     parser::Parser,
-    vm::{RegisterValue, VM},
+    vm::{VMValue, VM},
 };
 
 #[test]
@@ -123,7 +123,7 @@ fn native_function_with_return_value() {
     let program = compiler.compile().unwrap();
 
     let vm = VM::new(program).define_native_function("test".to_owned(), |_| {
-        Some(RegisterValue::Literal(std::borrow::Cow::Owned(
+        Some(VMValue::Literal(std::borrow::Cow::Owned(
             ast::Literal::Boolean(true),
         )))
     });
