@@ -2,4 +2,4 @@
 source: tests/integration.rs
 expression: output
 ---
-ERROR plrs: no function matching name 'test' found
+ERROR plrs: type error: function not found with name 'test'

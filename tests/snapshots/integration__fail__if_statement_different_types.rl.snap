@@ -2,5 +2,4 @@
 source: tests/integration.rs
 expression: output
 ---
-x as string: wow
-x as number: 2
+ERROR plrs: type error: expected Bool but got I64

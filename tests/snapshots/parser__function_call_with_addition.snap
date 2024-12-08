@@ -24,9 +24,11 @@ expression: statements
                             ),
                         },
                         is_mutable: false,
+                        type_name: None,
                     },
                 ],
             },
+            return_type_name: None,
         },
     ),
     Function(
@@ -36,6 +38,7 @@ expression: statements
             body: Block {
                 body: [],
             },
+            return_type_name: None,
         },
     ),
 ]

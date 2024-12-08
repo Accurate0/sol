@@ -10,7 +10,7 @@ let z = x + y;
 
 fn print() {}
 
-fn test(a) {
+fn test(a: int) {
     let y = 1.3 + a;
     {
         let z = y + 3;
@@ -36,10 +36,19 @@ main();
     .to_owned();
 
     let mut lexer = Lexer::new(&input);
-    let mut parser = Parser::new(&mut lexer, &input);
-    let compiler = Compiler::new(&mut parser);
+    let parser = Parser::new(&mut lexer, &input);
+    let compiler = Compiler::new();
 
-    let output = compiler.compile().unwrap();
+    let mut statements = Vec::new();
+    for token in parser {
+        if token.is_err() {
+            tracing::error!("{}", token.unwrap_err());
+            break;
+        }
+
+        statements.push(token.unwrap());
+    }
+    let output = compiler.compile(&statements).unwrap();
 
     assert_debug_snapshot!(output);
 }
@@ -53,10 +62,19 @@ x = 2;
     .to_owned();
 
     let mut lexer = Lexer::new(&input);
-    let mut parser = Parser::new(&mut lexer, &input);
-    let compiler = Compiler::new(&mut parser);
+    let parser = Parser::new(&mut lexer, &input);
+    let compiler = Compiler::new();
 
-    let output = compiler.compile().unwrap();
+    let mut statements = Vec::new();
+    for token in parser {
+        if token.is_err() {
+            tracing::error!("{}", token.unwrap_err());
+            break;
+        }
+
+        statements.push(token.unwrap());
+    }
+    let output = compiler.compile(&statements).unwrap();
 
     assert_debug_snapshot!(output);
 }
@@ -70,10 +88,19 @@ let y = -(x + 3);
     .to_owned();
 
     let mut lexer = Lexer::new(&input);
-    let mut parser = Parser::new(&mut lexer, &input);
-    let compiler = Compiler::new(&mut parser);
+    let parser = Parser::new(&mut lexer, &input);
+    let compiler = Compiler::new();
 
-    let output = compiler.compile().unwrap();
+    let mut statements = Vec::new();
+    for token in parser {
+        if token.is_err() {
+            tracing::error!("{}", token.unwrap_err());
+            break;
+        }
+
+        statements.push(token.unwrap());
+    }
+    let output = compiler.compile(&statements).unwrap();
 
     assert_debug_snapshot!(output);
 }
@@ -87,10 +114,19 @@ let y = !x;
     .to_owned();
 
     let mut lexer = Lexer::new(&input);
-    let mut parser = Parser::new(&mut lexer, &input);
-    let compiler = Compiler::new(&mut parser);
+    let parser = Parser::new(&mut lexer, &input);
+    let compiler = Compiler::new();
 
-    let output = compiler.compile().unwrap();
+    let mut statements = Vec::new();
+    for token in parser {
+        if token.is_err() {
+            tracing::error!("{}", token.unwrap_err());
+            break;
+        }
+
+        statements.push(token.unwrap());
+    }
+    let output = compiler.compile(&statements).unwrap();
 
     assert_debug_snapshot!(output);
 }
@@ -109,10 +145,19 @@ if false {
     .to_owned();
 
     let mut lexer = Lexer::new(&input);
-    let mut parser = Parser::new(&mut lexer, &input);
-    let compiler = Compiler::new(&mut parser);
+    let parser = Parser::new(&mut lexer, &input);
+    let compiler = Compiler::new();
 
-    let output = compiler.compile().unwrap();
+    let mut statements = Vec::new();
+    for token in parser {
+        if token.is_err() {
+            tracing::error!("{}", token.unwrap_err());
+            break;
+        }
+
+        statements.push(token.unwrap());
+    }
+    let output = compiler.compile(&statements).unwrap();
 
     assert_debug_snapshot!(output);
 }
@@ -168,10 +213,19 @@ if false {
     .to_owned();
 
     let mut lexer = Lexer::new(&input);
-    let mut parser = Parser::new(&mut lexer, &input);
-    let compiler = Compiler::new(&mut parser);
+    let parser = Parser::new(&mut lexer, &input);
+    let compiler = Compiler::new();
 
-    let output = compiler.compile().unwrap();
+    let mut statements = Vec::new();
+    for token in parser {
+        if token.is_err() {
+            tracing::error!("{}", token.unwrap_err());
+            break;
+        }
+
+        statements.push(token.unwrap());
+    }
+    let output = compiler.compile(&statements).unwrap();
 
     assert_debug_snapshot!(output);
 }
@@ -204,10 +258,19 @@ loop {
     .to_owned();
 
     let mut lexer = Lexer::new(&input);
-    let mut parser = Parser::new(&mut lexer, &input);
-    let compiler = Compiler::new(&mut parser);
+    let parser = Parser::new(&mut lexer, &input);
+    let compiler = Compiler::new();
 
-    let output = compiler.compile().unwrap();
+    let mut statements = Vec::new();
+    for token in parser {
+        if token.is_err() {
+            tracing::error!("{}", token.unwrap_err());
+            break;
+        }
+
+        statements.push(token.unwrap());
+    }
+    let output = compiler.compile(&statements).unwrap();
 
     assert_debug_snapshot!(output);
 }
@@ -246,10 +309,19 @@ print(x.test5.test6.test7);
     .to_owned();
 
     let mut lexer = Lexer::new(&input);
-    let mut parser = Parser::new(&mut lexer, &input);
-    let compiler = Compiler::new(&mut parser);
+    let parser = Parser::new(&mut lexer, &input);
+    let compiler = Compiler::new();
 
-    let output = compiler.compile().unwrap();
+    let mut statements = Vec::new();
+    for token in parser {
+        if token.is_err() {
+            tracing::error!("{}", token.unwrap_err());
+            break;
+        }
+
+        statements.push(token.unwrap());
+    }
+    let output = compiler.compile(&statements).unwrap();
 
     assert_debug_snapshot!(output);
 }

@@ -55,11 +55,7 @@ impl Display for Function {
 }
 
 #[derive(Debug)]
-pub struct Compiler<I>
-where
-    I: Iterator<Item = Result<Statement, ParserError>>,
-{
-    parser: I,
+pub struct Compiler {
     scope_stack: Vec<Scope>,
     next_available_register: Register,
     functions: Vec<Function>,
@@ -68,14 +64,16 @@ where
     bytecode: RefCell<Vec<Instruction>>,
 }
 
-impl<I> Compiler<I>
-where
-    I: Iterator<Item = Result<Statement, ParserError>>,
-{
-    pub fn new(parser: I) -> Self {
+impl Default for Compiler {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl Compiler {
+    pub fn new() -> Self {
         let bytecode = Vec::new().into();
         Self {
-            parser,
             scope_stack: vec![Scope::new(ScopeType::Global)],
             literals: vec![],
             next_available_register: 1,
@@ -84,9 +82,12 @@ where
         }
     }
 
-    pub fn compile(mut self) -> Result<CompiledProgram, CompilerError> {
-        while let Some(statement) = self.parser.next() {
-            self.compile_statement(&statement?)?;
+    pub fn compile(
+        mut self,
+        statements: &Vec<Statement>,
+    ) -> Result<CompiledProgram, CompilerError> {
+        for statement in statements {
+            self.compile_statement(statement)?;
         }
 
         let global_register_count = self.next_available_register;
@@ -121,7 +122,7 @@ where
     fn can_mutate_variable(&mut self, name: &str) -> bool {
         let scope_stack = &mut self.scope_stack.iter().rev();
         for v in scope_stack {
-            if v.contains(name).is_some() {
+            if v.get_register_for(name).is_some() {
                 return v.is_mutable(name).is_some_and(|m| m);
             }
         }
@@ -132,7 +133,7 @@ where
     fn resolve(&mut self, name: &str) -> Option<Register> {
         let scope_stack = &mut self.scope_stack.iter().rev();
         for v in scope_stack {
-            if let Some(reg) = v.contains(name) {
+            if let Some(reg) = v.get_register_for(name) {
                 return Some(reg);
             }
         }
@@ -168,8 +169,8 @@ where
         self.add_scope();
         let prev_code = self.bytecode.replace(Vec::new());
 
-        for arg_name in &func.parameters {
-            self.define_immutable_current_scope(arg_name, self.next_available_register);
+        for param in &func.parameters {
+            self.define_immutable_current_scope(&param.name, self.next_available_register);
             self.next_available_register += 1;
         }
 
@@ -652,11 +653,12 @@ where
     pub fn compile_statement(&mut self, statement: &Statement) -> Result<(), CompilerError> {
         match statement {
             // kinda sus?
-            Statement::Const { name, value } => self.compile_let(name, value, false),
+            Statement::Const { name, value, .. } => self.compile_let(name, value, false),
             Statement::Let {
                 name,
                 value,
                 is_mutable,
+                ..
             } => self.compile_let(name, value, *is_mutable),
             Statement::Reassignment { name, value } => self.compile_let_mutation(name, value),
             Statement::If {

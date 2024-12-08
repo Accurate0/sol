@@ -4,16 +4,29 @@ use ordermap::OrderMap;
 #[derive(Debug, PartialEq)]
 pub struct Function {
     pub name: String,
-    pub parameters: Vec<String>,
+    pub parameters: Vec<FunctionParameter>,
     pub body: Box<Statement>,
+    pub return_type_name: Option<String>,
+}
+
+#[derive(Debug, PartialEq)]
+pub struct FunctionParameter {
+    pub name: String,
+    pub type_name: String,
 }
 
 impl Function {
-    pub fn new(name: String, parameters: Vec<String>, body: Box<Statement>) -> Self {
+    pub fn new(
+        name: String,
+        parameters: Vec<FunctionParameter>,
+        body: Box<Statement>,
+        return_type_name: Option<String>,
+    ) -> Self {
         Self {
             name,
             parameters,
             body,
+            return_type_name,
         }
     }
 }
@@ -23,11 +36,13 @@ pub enum Statement {
     Const {
         name: String,
         value: Expression,
+        type_name: Option<String>,
     },
     Let {
         name: String,
         value: Box<Expression>,
         is_mutable: bool,
+        type_name: Option<String>,
     },
     Reassignment {
         name: String,

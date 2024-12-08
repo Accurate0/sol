@@ -10,12 +10,16 @@ expression: statements
                 3,
             ),
         ),
+        type_name: None,
     },
     Function(
         Function {
             name: "main",
             parameters: [
-                "argv",
+                FunctionParameter {
+                    name: "argv",
+                    type_name: "string",
+                },
             ],
             body: Block {
                 body: [
@@ -27,6 +31,7 @@ expression: statements
                             ),
                         ),
                         is_mutable: false,
+                        type_name: None,
                     },
                     Let {
                         name: "y",
@@ -36,6 +41,7 @@ expression: statements
                             ),
                         ),
                         is_mutable: false,
+                        type_name: None,
                     },
                     Expression(
                         FunctionCall {
@@ -91,6 +97,7 @@ expression: statements
                     ),
                 ],
             },
+            return_type_name: None,
         },
     ),
     Function(
@@ -129,15 +136,25 @@ expression: statements
                     },
                 ],
             },
+            return_type_name: None,
         },
     ),
     Function(
         Function {
             name: "new_function",
             parameters: [
-                "arg1",
-                "arg2",
-                "arg3",
+                FunctionParameter {
+                    name: "arg1",
+                    type_name: "int",
+                },
+                FunctionParameter {
+                    name: "arg2",
+                    type_name: "int",
+                },
+                FunctionParameter {
+                    name: "arg3",
+                    type_name: "int",
+                },
             ],
             body: Block {
                 body: [
@@ -153,6 +170,7 @@ expression: statements
                     },
                 ],
             },
+            return_type_name: None,
         },
     ),
 ]

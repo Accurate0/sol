@@ -5,7 +5,7 @@ let z = x + y;
 fn print() {
 }
 
-fn test(a) {
+fn test(a: int) {
     let y = 1.3 + a;
     print("y: ", y);
 

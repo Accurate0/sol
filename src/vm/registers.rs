@@ -41,7 +41,7 @@ impl<'a> Registers<'a> {
     }
 }
 
-impl<'a> Default for Registers<'a> {
+impl Default for Registers<'_> {
     fn default() -> Self {
         Self::new()
     }
@@ -72,7 +72,7 @@ impl<'a> Index<Range<Register>> for Registers<'a> {
     }
 }
 
-impl<'a> IndexMut<Register> for Registers<'a> {
+impl IndexMut<Register> for Registers<'_> {
     fn index_mut(&mut self, index: Register) -> &mut Self::Output {
         let base_register = self.base_register();
         &mut self.registers[base_register + index as usize]

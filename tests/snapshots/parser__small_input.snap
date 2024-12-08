@@ -10,6 +10,7 @@ expression: statements
                 3,
             ),
         ),
+        type_name: None,
     },
     Function(
         Function {
@@ -18,6 +19,7 @@ expression: statements
             body: Block {
                 body: [],
             },
+            return_type_name: None,
         },
     ),
 ]

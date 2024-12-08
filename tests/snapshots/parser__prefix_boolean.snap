@@ -17,6 +17,7 @@ expression: statements
                             ),
                         ),
                         is_mutable: false,
+                        type_name: None,
                     },
                     Let {
                         name: "y",
@@ -27,9 +28,11 @@ expression: statements
                             ),
                         },
                         is_mutable: false,
+                        type_name: None,
                     },
                 ],
             },
+            return_type_name: None,
         },
     ),
 ]

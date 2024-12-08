@@ -12,6 +12,7 @@ use lexer::Lexer;
 use parser::Parser;
 use tracing::Level;
 use tracing_subscriber::{filter::Targets, layer::SubscriberExt, util::SubscriberInitExt};
+use typechecker::Typechecker;
 use vm::VM;
 
 mod ast;
@@ -22,10 +23,10 @@ mod macros;
 mod parser;
 mod scope;
 mod stdlib;
+mod typechecker;
 mod types;
 mod vm;
 
-// TODO: Add basic type checking - should be done in same pass as parser?
 // TODO: Better dump printing
 // TODO: Add line numbers to all errors?
 // TODO: Add ability to include other files? C-style #include? files that are included can't have
@@ -52,22 +53,30 @@ struct Args {
 #[derive(Subcommand, Debug, Clone)]
 enum Commands {
     /// run a program file
-    Run { file: String },
+    Run {
+        file: String,
+        #[arg(short, long, default_value_t = false)]
+        no_typecheck: bool,
+    },
     /// dump internal state
     Dump {
         file: String,
         #[arg(short, long, default_value_t, value_enum)]
-        item: ItemToDump,
+        target: DumpTarget,
+        #[arg(long, default_value_t = false)]
+        typecheck: bool,
     },
 }
 
 #[derive(ValueEnum, Clone, Default, Debug)]
-enum ItemToDump {
+enum DumpTarget {
     /// tokens from the lexer
     #[default]
     Tokens,
     /// parsed ast
     Ast,
+    /// typechecked ast
+    Typecheck,
     /// compiled bytecode
     Bytecode,
 }
@@ -93,50 +102,103 @@ fn main_internal() -> Result<(), Box<dyn std::error::Error>> {
     let args = Args::parse();
 
     match args.command {
-        Commands::Run { file } => {
+        Commands::Run { file, no_typecheck } => {
             let buffer = read_file_to_string(&file)?;
 
             let lexer = Lexer::new(&buffer);
             let parser = Parser::new(lexer, &buffer);
-            let compiler = Compiler::new(parser);
 
-            let program = compiler.compile()?;
+            let statements = if no_typecheck {
+                let mut tokens = Vec::new();
+                for token in parser {
+                    if token.is_err() {
+                        tracing::error!("{}", token.unwrap_err());
+                        break;
+                    }
+
+                    tokens.push(token.unwrap());
+                }
+
+                tokens
+            } else {
+                let typechecker = Typechecker::new(parser);
+                typechecker.check()?
+            };
+
+            let compiler = Compiler::new();
+            let program = compiler.compile(&statements)?;
 
             let vm = VM::new(program);
 
             vm.run()?;
         }
-        Commands::Dump { file, item } => {
+        Commands::Dump {
+            file,
+            target,
+            typecheck,
+        } => {
             let buffer = read_file_to_string(&file)?;
 
-            match item {
-                ItemToDump::Tokens => {
+            match target {
+                DumpTarget::Tokens => {
                     let tokens = Lexer::new(&buffer).collect::<Vec<_>>();
                     tracing::info!("{:#?}", tokens);
                 }
-                ItemToDump::Ast => {
+                DumpTarget::Ast => {
                     let lexer = Lexer::new(&buffer);
                     let parser = Parser::new(lexer, &buffer);
 
-                    let mut tokens = Vec::new();
-                    for token in parser {
-                        if token.is_err() {
-                            tracing::error!("{}", token.unwrap_err());
-                            break;
+                    let tokens = if typecheck {
+                        let typechecker = Typechecker::new(parser);
+                        typechecker.check()?
+                    } else {
+                        let mut tokens = Vec::new();
+                        for token in parser {
+                            if token.is_err() {
+                                tracing::error!("{}", token.unwrap_err());
+                                break;
+                            }
+
+                            tokens.push(token.unwrap());
                         }
 
-                        tokens.push(token.unwrap());
-                    }
+                        tokens
+                    };
 
                     tracing::info!("{tokens:#?}")
                 }
-                ItemToDump::Bytecode => {
+                DumpTarget::Bytecode => {
                     let lexer = Lexer::new(&buffer);
                     let parser = Parser::new(lexer, &buffer);
-                    let compiler = Compiler::new(parser);
 
-                    let program = compiler.compile()?;
+                    let tokens = if typecheck {
+                        let typechecker = Typechecker::new(parser);
+                        typechecker.check()?
+                    } else {
+                        let mut tokens = Vec::new();
+                        for token in parser {
+                            if token.is_err() {
+                                tracing::error!("{}", token.unwrap_err());
+                                break;
+                            }
+
+                            tokens.push(token.unwrap());
+                        }
+
+                        tokens
+                    };
+
+                    let compiler = Compiler::new();
+
+                    let program = compiler.compile(&tokens)?;
                     tracing::info!("{:#?}", program);
+                }
+                DumpTarget::Typecheck => {
+                    let lexer = Lexer::new(&buffer);
+                    let parser = Parser::new(lexer, &buffer);
+                    let typechecker = Typechecker::new(parser);
+
+                    typechecker.check()?;
                 }
             }
         }

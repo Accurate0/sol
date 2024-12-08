@@ -66,7 +66,7 @@ impl Scope {
         );
     }
 
-    pub fn contains(&self, name: &str) -> Option<Register> {
+    pub fn get_register_for(&self, name: &str) -> Option<Register> {
         self.symbols.borrow().get(name).map(|v| v.register)
     }
 

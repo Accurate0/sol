@@ -26,6 +26,7 @@ expression: statements
                     ),
                 ],
             },
+            return_type_name: None,
         },
     ),
 ]

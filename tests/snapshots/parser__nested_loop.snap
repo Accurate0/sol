@@ -11,6 +11,7 @@ expression: statements
             ),
         ),
         is_mutable: true,
+        type_name: None,
     },
     Loop {
         body: Block {
@@ -23,6 +24,7 @@ expression: statements
                         ),
                     ),
                     is_mutable: true,
+                    type_name: None,
                 },
                 Loop {
                     body: Block {

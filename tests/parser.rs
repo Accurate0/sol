@@ -11,14 +11,18 @@ fn small_input() {
 
     let mut lexer = Lexer::new(&input);
     let parser = Parser::new(&mut lexer, &input);
-    let statements = parser.collect::<Vec<_>>();
 
-    assert!(statements.iter().all(|s| s.is_ok()));
+    let mut statements = Vec::new();
+    for token in parser {
+        if token.is_err() {
+            tracing::error!("{}", token.unwrap_err());
+            break;
+        }
 
-    let statements = statements
-        .into_iter()
-        .map(|s| s.unwrap())
-        .collect::<Vec<_>>();
+        statements.push(token.unwrap());
+    }
+
+    let statements = statements.into_iter().collect::<Vec<_>>();
 
     assert_debug_snapshot!(statements);
 }
@@ -28,7 +32,7 @@ fn larger_test() {
     let input = r#"
 const wow = 3;
 
-fn main(argv) {
+fn main(argv: string) {
     let x = 2;
     let y = true;
     print("test");
@@ -50,7 +54,7 @@ fn test(){
     }
 }
 
-fn new_function(arg1, arg2, arg3) {
+fn new_function(arg1: int, arg2: int, arg3: int) {
 {
 
     test ();
@@ -60,14 +64,16 @@ fn new_function(arg1, arg2, arg3) {
 
     let mut lexer = Lexer::new(&input);
     let parser = Parser::new(&mut lexer, &input);
-    let statements = parser.collect::<Vec<_>>();
 
-    assert!(statements.iter().all(|s| s.is_ok()));
+    let mut statements = Vec::new();
+    for token in parser {
+        if token.is_err() {
+            tracing::error!("{}", token.unwrap_err());
+            break;
+        }
 
-    let statements = statements
-        .into_iter()
-        .map(|s| s.unwrap())
-        .collect::<Vec<_>>();
+        statements.push(token.unwrap());
+    }
 
     assert_debug_snapshot!(statements);
 }
@@ -83,14 +89,16 @@ fn complex_math() {
 
     let mut lexer = Lexer::new(&input);
     let parser = Parser::new(&mut lexer, &input);
-    let statements = parser.collect::<Vec<_>>();
+    let mut statements = Vec::new();
 
-    assert!(statements.iter().all(|s| s.is_ok()));
+    for token in parser {
+        if token.is_err() {
+            tracing::error!("{}", token.unwrap_err());
+            break;
+        }
 
-    let statements = statements
-        .into_iter()
-        .map(|s| s.unwrap())
-        .collect::<Vec<_>>();
+        statements.push(token.unwrap());
+    }
 
     assert_debug_snapshot!(statements);
 }
@@ -106,14 +114,16 @@ fn math() {
 
     let mut lexer = Lexer::new(&input);
     let parser = Parser::new(&mut lexer, &input);
-    let statements = parser.collect::<Vec<_>>();
+    let mut statements = Vec::new();
 
-    assert!(statements.iter().all(|s| s.is_ok()));
+    for token in parser {
+        if token.is_err() {
+            tracing::error!("{}", token.unwrap_err());
+            break;
+        }
 
-    let statements = statements
-        .into_iter()
-        .map(|s| s.unwrap())
-        .collect::<Vec<_>>();
+        statements.push(token.unwrap());
+    }
 
     assert_debug_snapshot!(statements);
 }
@@ -122,7 +132,7 @@ fn math() {
 fn large_input() {
     let input = r#"
         const wow = 3;
-        fn test(argv) {
+        fn test(argv: string) {
             // this is a comment
             let a = "hello";
         }
@@ -132,14 +142,16 @@ fn large_input() {
     let mut lexer = Lexer::new(&input);
     let parser = Parser::new(&mut lexer, &input);
 
-    let statements = parser.collect::<Vec<_>>();
+    let mut statements = Vec::new();
 
-    assert!(statements.iter().all(|s| s.is_ok()));
+    for token in parser {
+        if token.is_err() {
+            tracing::error!("{}", token.unwrap_err());
+            break;
+        }
 
-    let statements = statements
-        .into_iter()
-        .map(|s| s.unwrap())
-        .collect::<Vec<_>>();
+        statements.push(token.unwrap());
+    }
 
     assert_debug_snapshot!(statements);
 }
@@ -159,14 +171,16 @@ fn function_call_return() {
 
     let mut lexer = Lexer::new(&input);
     let parser = Parser::new(&mut lexer, &input);
-    let statements = parser.collect::<Vec<_>>();
+    let mut statements = Vec::new();
 
-    assert!(statements.iter().all(|s| s.is_ok()));
+    for token in parser {
+        if token.is_err() {
+            tracing::error!("{}", token.unwrap_err());
+            break;
+        }
 
-    let statements = statements
-        .into_iter()
-        .map(|s| s.unwrap())
-        .collect::<Vec<_>>();
+        statements.push(token.unwrap());
+    }
 
     assert_debug_snapshot!(statements);
 }
@@ -184,14 +198,16 @@ fn useless_expression() {
     let mut lexer = Lexer::new(&input);
     let parser = Parser::new(&mut lexer, &input);
 
-    let statements = parser.collect::<Vec<_>>();
+    let mut statements = Vec::new();
 
-    assert!(statements.iter().all(|s| s.is_ok()));
+    for token in parser {
+        if token.is_err() {
+            tracing::error!("{}", token.unwrap_err());
+            break;
+        }
 
-    let statements = statements
-        .into_iter()
-        .map(|s| s.unwrap())
-        .collect::<Vec<_>>();
+        statements.push(token.unwrap());
+    }
 
     assert_debug_snapshot!(statements);
 }
@@ -211,14 +227,16 @@ fn function_call_with_addition() {
 
     let mut lexer = Lexer::new(&input);
     let parser = Parser::new(&mut lexer, &input);
-    let statements = parser.collect::<Vec<_>>();
+    let mut statements = Vec::new();
 
-    assert!(statements.iter().all(|s| s.is_ok()));
+    for token in parser {
+        if token.is_err() {
+            tracing::error!("{}", token.unwrap_err());
+            break;
+        }
 
-    let statements = statements
-        .into_iter()
-        .map(|s| s.unwrap())
-        .collect::<Vec<_>>();
+        statements.push(token.unwrap());
+    }
 
     assert_debug_snapshot!(statements);
 }
@@ -237,14 +255,16 @@ fn variable_and_operation() {
 
     let mut lexer = Lexer::new(&input);
     let parser = Parser::new(&mut lexer, &input);
-    let statements = parser.collect::<Vec<_>>();
+    let mut statements = Vec::new();
 
-    assert!(statements.iter().all(|s| s.is_ok()));
+    for token in parser {
+        if token.is_err() {
+            tracing::error!("{}", token.unwrap_err());
+            break;
+        }
 
-    let statements = statements
-        .into_iter()
-        .map(|s| s.unwrap())
-        .collect::<Vec<_>>();
+        statements.push(token.unwrap());
+    }
 
     assert_debug_snapshot!(statements);
 }
@@ -261,15 +281,16 @@ fn variable_mutation() {
 
     let mut lexer = Lexer::new(&input);
     let parser = Parser::new(&mut lexer, &input);
-    let statements = parser.collect::<Vec<_>>();
+    let mut statements = Vec::new();
 
-    assert!(statements.iter().all(|s| s.is_ok()));
+    for token in parser {
+        if token.is_err() {
+            tracing::error!("{}", token.unwrap_err());
+            break;
+        }
 
-    let statements = statements
-        .into_iter()
-        .map(|s| s.unwrap())
-        .collect::<Vec<_>>();
-
+        statements.push(token.unwrap());
+    }
     assert_debug_snapshot!(statements);
 }
 
@@ -285,14 +306,16 @@ fn prefix() {
 
     let mut lexer = Lexer::new(&input);
     let parser = Parser::new(&mut lexer, &input);
-    let statements = parser.collect::<Vec<_>>();
+    let mut statements = Vec::new();
 
-    assert!(statements.iter().all(|s| s.is_ok()));
+    for token in parser {
+        if token.is_err() {
+            tracing::error!("{}", token.unwrap_err());
+            break;
+        }
 
-    let statements = statements
-        .into_iter()
-        .map(|s| s.unwrap())
-        .collect::<Vec<_>>();
+        statements.push(token.unwrap());
+    }
 
     assert_debug_snapshot!(statements);
 }
@@ -309,14 +332,16 @@ fn prefix_boolean() {
 
     let mut lexer = Lexer::new(&input);
     let parser = Parser::new(&mut lexer, &input);
-    let statements = parser.collect::<Vec<_>>();
+    let mut statements = Vec::new();
 
-    assert!(statements.iter().all(|s| s.is_ok()));
+    for token in parser {
+        if token.is_err() {
+            tracing::error!("{}", token.unwrap_err());
+            break;
+        }
 
-    let statements = statements
-        .into_iter()
-        .map(|s| s.unwrap())
-        .collect::<Vec<_>>();
+        statements.push(token.unwrap());
+    }
 
     assert_debug_snapshot!(statements);
 }
@@ -373,14 +398,16 @@ if false {
 
     let mut lexer = Lexer::new(&input);
     let parser = Parser::new(&mut lexer, &input);
-    let statements = parser.collect::<Vec<_>>();
+    let mut statements = Vec::new();
 
-    assert!(statements.iter().all(|s| s.is_ok()));
+    for token in parser {
+        if token.is_err() {
+            tracing::error!("{}", token.unwrap_err());
+            break;
+        }
 
-    let statements = statements
-        .into_iter()
-        .map(|s| s.unwrap())
-        .collect::<Vec<_>>();
+        statements.push(token.unwrap());
+    }
 
     assert_debug_snapshot!(statements);
 }
@@ -414,14 +441,16 @@ loop {
 
     let mut lexer = Lexer::new(&input);
     let parser = Parser::new(&mut lexer, &input);
-    let statements = parser.collect::<Vec<_>>();
+    let mut statements = Vec::new();
 
-    assert!(statements.iter().all(|s| s.is_ok()));
+    for token in parser {
+        if token.is_err() {
+            tracing::error!("{}", token.unwrap_err());
+            break;
+        }
 
-    let statements = statements
-        .into_iter()
-        .map(|s| s.unwrap())
-        .collect::<Vec<_>>();
+        statements.push(token.unwrap());
+    }
 
     assert_debug_snapshot!(statements);
 }
@@ -461,14 +490,16 @@ print(x.test5.test6.test7);
 
     let mut lexer = Lexer::new(&input);
     let parser = Parser::new(&mut lexer, &input);
-    let statements = parser.collect::<Vec<_>>();
+    let mut statements = Vec::new();
 
-    assert!(statements.iter().all(|s| s.is_ok()));
+    for token in parser {
+        if token.is_err() {
+            tracing::error!("{}", token.unwrap_err());
+            break;
+        }
 
-    let statements = statements
-        .into_iter()
-        .map(|s| s.unwrap())
-        .collect::<Vec<_>>();
+        statements.push(token.unwrap());
+    }
 
     assert_debug_snapshot!(statements);
 }

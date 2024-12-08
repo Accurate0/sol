@@ -17,6 +17,7 @@ expression: statements
                             ),
                         ),
                         is_mutable: false,
+                        type_name: None,
                     },
                     Reassignment {
                         name: "x",
@@ -34,6 +35,7 @@ expression: statements
                     },
                 ],
             },
+            return_type_name: None,
         },
     ),
 ]

@@ -2,7 +2,7 @@ let x = 3;
 let y = 4;
 let z = x + y;
 
-fn test(a) {
+fn test(a: int) {
     let y = 1.3 + a;
     print("y: ", y);
 

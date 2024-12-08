@@ -1,5 +1,5 @@
 use crate::{
-    ast::{self, Statement},
+    ast::{self, FunctionParameter, Statement},
     lexer::{Span, Token, TokenKind},
     types,
 };
@@ -80,6 +80,16 @@ where
 
     fn parse_const(&mut self) -> Result<ast::Statement, ParserError> {
         let name = self.consume(TokenKind::Identifier)?.text(self.input);
+
+        let type_name = if self.peek() == TokenKind::Colon {
+            self.consume(TokenKind::Colon)?;
+            let type_name_token = self.consume(TokenKind::Identifier)?;
+
+            Some(self.text(&type_name_token).to_owned())
+        } else {
+            None
+        };
+
         self.consume(TokenKind::Assignment)?;
         // could be expr in future
         let literal = self.parse_literal()?;
@@ -89,6 +99,7 @@ where
         Ok(ast::Statement::Const {
             name: name.to_owned(),
             value: literal,
+            type_name,
         })
     }
 
@@ -99,9 +110,24 @@ where
         let args = self.parse_parameters()?;
         let _close_paren = self.consume(TokenKind::CloseParen)?;
 
+        let return_type_name = if self.peek() == TokenKind::Subtract {
+            self.consume(TokenKind::Subtract)?;
+            self.consume(TokenKind::GreaterThan)?;
+
+            let return_type_name_token = self.consume(TokenKind::Identifier)?;
+            Some(self.text(&return_type_name_token).to_owned())
+        } else {
+            None
+        };
+
         let block = self.parse_block()?;
 
-        Ok(ast::Function::new(name.to_owned(), args, block.into()))
+        Ok(ast::Function::new(
+            name.to_owned(),
+            args,
+            block.into(),
+            return_type_name,
+        ))
     }
 
     fn parse_let(&mut self) -> Result<ast::Statement, ParserError> {
@@ -115,6 +141,15 @@ where
 
         let variable_name = self.consume(TokenKind::Identifier)?;
 
+        let type_name = if self.peek() == TokenKind::Colon {
+            self.consume(TokenKind::Colon)?;
+            let type_name_token = self.consume(TokenKind::Identifier)?;
+
+            Some(self.text(&type_name_token).to_owned())
+        } else {
+            None
+        };
+
         self.consume(TokenKind::Assignment)?;
 
         let expression = self.parse_expression(0)?;
@@ -124,6 +159,7 @@ where
             name: self.text(&variable_name).to_owned(),
             value: expression.into(),
             is_mutable: has_mutable_token,
+            type_name,
         })
     }
 
@@ -461,16 +497,16 @@ where
             TokenKind::OpenBrace => self.parse_block(),
             _ => {
                 let peeked_token = self.peek_token();
-                return Err(ParserError::UnexpectedToken {
+                Err(ParserError::UnexpectedToken {
                     token: peeked_token,
                     text: self.text(&peeked_token).to_owned(),
                     in_function: stringify!(parse_statement),
-                });
+                })
             }
         }
     }
 
-    fn parse_parameters(&mut self) -> Result<Vec<String>, ParserError> {
+    fn parse_parameters(&mut self) -> Result<Vec<FunctionParameter>, ParserError> {
         let mut args = Vec::new();
 
         loop {
@@ -479,7 +515,18 @@ where
             }
 
             let identifier = self.consume(TokenKind::Identifier)?;
-            args.push(self.text(&identifier).to_owned());
+            let name = self.text(&identifier).to_owned();
+
+            self.consume(TokenKind::Colon)?;
+
+            let type_name_token = self.consume(TokenKind::Identifier)?;
+            let type_name = self.text(&type_name_token);
+
+            args.push(FunctionParameter {
+                name,
+                type_name: type_name.to_string(),
+            });
+
             if self.peek() == TokenKind::Comma {
                 self.consume(TokenKind::Comma)?;
             }
@@ -519,7 +566,7 @@ where
     }
 }
 
-impl<'a, I> Iterator for Parser<'a, I>
+impl<I> Iterator for Parser<'_, I>
 where
     I: Iterator<Item = Token>,
 {

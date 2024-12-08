@@ -10,12 +10,16 @@ expression: statements
                 3,
             ),
         ),
+        type_name: None,
     },
     Function(
         Function {
             name: "test",
             parameters: [
-                "argv",
+                FunctionParameter {
+                    name: "argv",
+                    type_name: "string",
+                },
             ],
             body: Block {
                 body: [
@@ -27,9 +31,11 @@ expression: statements
                             ),
                         ),
                         is_mutable: false,
+                        type_name: None,
                     },
                 ],
             },
+            return_type_name: None,
         },
     ),
 ]

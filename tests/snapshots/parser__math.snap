@@ -33,9 +33,11 @@ expression: statements
                             },
                         },
                         is_mutable: false,
+                        type_name: None,
                     },
                 ],
             },
+            return_type_name: None,
         },
     ),
 ]

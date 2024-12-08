@@ -14,11 +14,20 @@ fn complex_math() {
         "#
     .to_owned();
 
-    let mut lexer = Lexer::new(&input);
-    let mut parser = Parser::new(&mut lexer, &input);
-    let compiler = Compiler::new(&mut parser);
+    let lexer = Lexer::new(&input);
+    let parser = Parser::new(lexer, &input);
+    let compiler = Compiler::new();
 
-    let program = compiler.compile().unwrap();
+    let mut statements = Vec::new();
+    for token in parser {
+        if token.is_err() {
+            tracing::error!("{}", token.unwrap_err());
+            break;
+        }
+
+        statements.push(token.unwrap());
+    }
+    let program = compiler.compile(&statements).unwrap();
 
     let vm = VM::new(program);
     let register_state = vm.run_with_registers_returned();
@@ -33,11 +42,20 @@ fn math() {
         "#
     .to_owned();
 
-    let mut lexer = Lexer::new(&input);
-    let mut parser = Parser::new(&mut lexer, &input);
-    let compiler = Compiler::new(&mut parser);
+    let lexer = Lexer::new(&input);
+    let parser = Parser::new(lexer, &input);
+    let compiler = Compiler::new();
 
-    let program = compiler.compile().unwrap();
+    let mut statements = Vec::new();
+    for token in parser {
+        if token.is_err() {
+            tracing::error!("{}", token.unwrap_err());
+            break;
+        }
+
+        statements.push(token.unwrap());
+    }
+    let program = compiler.compile(&statements).unwrap();
 
     let vm = VM::new(program);
     let register_state = vm.run_with_registers_returned();
@@ -53,11 +71,20 @@ fn prefix() {
         "#
     .to_owned();
 
-    let mut lexer = Lexer::new(&input);
-    let mut parser = Parser::new(&mut lexer, &input);
-    let compiler = Compiler::new(&mut parser);
+    let lexer = Lexer::new(&input);
+    let parser = Parser::new(lexer, &input);
+    let compiler = Compiler::new();
 
-    let program = compiler.compile().unwrap();
+    let mut statements = Vec::new();
+    for token in parser {
+        if token.is_err() {
+            tracing::error!("{}", token.unwrap_err());
+            break;
+        }
+
+        statements.push(token.unwrap());
+    }
+    let program = compiler.compile(&statements).unwrap();
 
     let vm = VM::new(program);
     let register_state = vm.run_with_registers_returned();
@@ -73,11 +100,20 @@ fn prefix_boolean() {
         "#
     .to_owned();
 
-    let mut lexer = Lexer::new(&input);
-    let mut parser = Parser::new(&mut lexer, &input);
-    let compiler = Compiler::new(&mut parser);
+    let lexer = Lexer::new(&input);
+    let parser = Parser::new(lexer, &input);
+    let compiler = Compiler::new();
 
-    let program = compiler.compile().unwrap();
+    let mut statements = Vec::new();
+    for token in parser {
+        if token.is_err() {
+            tracing::error!("{}", token.unwrap_err());
+            break;
+        }
+
+        statements.push(token.unwrap());
+    }
+    let program = compiler.compile(&statements).unwrap();
 
     let vm = VM::new(program);
     let register_state = vm.run_with_registers_returned();
@@ -92,11 +128,20 @@ fn native_function() {
         "#
     .to_owned();
 
-    let mut lexer = Lexer::new(&input);
-    let mut parser = Parser::new(&mut lexer, &input);
-    let compiler = Compiler::new(&mut parser);
+    let lexer = Lexer::new(&input);
+    let parser = Parser::new(lexer, &input);
+    let compiler = Compiler::new();
 
-    let program = compiler.compile().unwrap();
+    let mut statements = Vec::new();
+    for token in parser {
+        if token.is_err() {
+            tracing::error!("{}", token.unwrap_err());
+            break;
+        }
+
+        statements.push(token.unwrap());
+    }
+    let program = compiler.compile(&statements).unwrap();
 
     let vm = VM::new(program).define_native_function("test_function".to_owned(), |_| None);
     let register_state = vm.run_with_registers_returned();
@@ -116,12 +161,20 @@ fn native_function_with_return_value() {
         "#
     .to_owned();
 
-    let mut lexer = Lexer::new(&input);
-    let mut parser = Parser::new(&mut lexer, &input);
-    let compiler = Compiler::new(&mut parser);
+    let lexer = Lexer::new(&input);
+    let parser = Parser::new(lexer, &input);
+    let compiler = Compiler::new();
 
-    let program = compiler.compile().unwrap();
+    let mut statements = Vec::new();
+    for token in parser {
+        if token.is_err() {
+            tracing::error!("{}", token.unwrap_err());
+            break;
+        }
 
+        statements.push(token.unwrap());
+    }
+    let program = compiler.compile(&statements).unwrap();
     let vm = VM::new(program).define_native_function("test".to_owned(), |_| {
         Some(VMValue::Literal(std::borrow::Cow::Owned(
             types::Literal::Boolean(true),
@@ -159,11 +212,20 @@ loop {
         "#
     .to_owned();
 
-    let mut lexer = Lexer::new(&input);
-    let mut parser = Parser::new(&mut lexer, &input);
-    let compiler = Compiler::new(&mut parser);
+    let lexer = Lexer::new(&input);
+    let parser = Parser::new(lexer, &input);
+    let compiler = Compiler::new();
 
-    let program = compiler.compile().unwrap();
+    let mut statements = Vec::new();
+    for token in parser {
+        if token.is_err() {
+            tracing::error!("{}", token.unwrap_err());
+            break;
+        }
+
+        statements.push(token.unwrap());
+    }
+    let program = compiler.compile(&statements).unwrap();
 
     let vm = VM::new(program);
     let register_state = vm.run_with_registers_returned();
@@ -204,11 +266,20 @@ print(x.test5.test6.test7);
         "#
     .to_owned();
 
-    let mut lexer = Lexer::new(&input);
-    let mut parser = Parser::new(&mut lexer, &input);
-    let compiler = Compiler::new(&mut parser);
+    let lexer = Lexer::new(&input);
+    let parser = Parser::new(lexer, &input);
+    let compiler = Compiler::new();
 
-    let program = compiler.compile().unwrap();
+    let mut statements = Vec::new();
+    for token in parser {
+        if token.is_err() {
+            tracing::error!("{}", token.unwrap_err());
+            break;
+        }
+
+        statements.push(token.unwrap());
+    }
+    let program = compiler.compile(&statements).unwrap();
 
     let vm = VM::new(program);
     let register_state = vm.run_with_registers_returned();

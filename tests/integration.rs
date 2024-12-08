@@ -10,6 +10,7 @@ fn run_success(#[files("tests/files/success/*.rl")] path: PathBuf) {
         .arg("run")
         .arg(&path)
         .env("NO_COLOR", "true")
+        .env("PLRS_TEST", "true")
         .env("PLRS_LOG", "info");
 
     let output = cmd.output().unwrap();
@@ -32,6 +33,7 @@ fn run_fail(#[files("tests/files/fail/*.rl")] path: PathBuf) {
         .arg("run")
         .arg(&path)
         .env("NO_COLOR", "true")
+        .env("PLRS_TEST", "true")
         .env("PLRS_LOG", "info");
 
     let output = cmd.output().unwrap();

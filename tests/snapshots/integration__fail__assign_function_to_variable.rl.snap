@@ -2,4 +2,4 @@
 source: tests/integration.rs
 expression: output
 ---
-ERROR plrs: variable 'test' not found in scope
+ERROR plrs: type error: variable not found with name 'test'

@@ -1,4 +1,4 @@
-fn test(x) {
+fn test(x: bool) {
     print(x);
     return true;
 }
@@ -17,7 +17,7 @@ if test() {
     print("fail");
 }
 
-fn test2(x) {
+fn test2(x: string) {
     print(x);
 }
 

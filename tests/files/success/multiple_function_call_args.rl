@@ -1,4 +1,4 @@
-fn test(a, b, c, d) {
+fn test(a: int, b: int, c: int, d: int) {
     print(a);
     print(b);
     print(c);
