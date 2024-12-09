@@ -551,16 +551,13 @@ where
     }
 
     fn next(&mut self) -> Option<Token> {
-        let token = self.tokens.next();
+        let token = self.tokens.next()?;
 
         // tracing::info!("{:?}", token);
-        if token
-            .as_ref()
-            .is_some_and(|t| *t.kind() == TokenKind::EndOfFile)
-        {
+
+        if *token.kind() == TokenKind::EndOfFile {
             None
         } else {
-            let token = token.unwrap();
             Some(token)
         }
     }

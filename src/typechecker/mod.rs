@@ -303,6 +303,7 @@ where
 
         let mut return_types = Vec::with_capacity(return_statements.len());
         for return_statement in return_statements {
+            // FIXME: we can't evaluate these like this?
             let defined_ret_type = self.typecheck_expression(return_statement)?;
             return_types.push(defined_ret_type);
         }
