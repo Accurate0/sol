@@ -27,6 +27,7 @@ mod typechecker;
 mod types;
 mod vm;
 
+// TODO: Add arrays that aren't just objects with number indexes
 // TODO: Better dump printing
 // TODO: Add line numbers to all errors?
 // TODO: Add ability to include other files? C-style #include? files that are included can't have
