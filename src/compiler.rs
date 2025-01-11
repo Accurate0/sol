@@ -1,31 +1,16 @@
 use crate::{
     ast::{self, Expression, Statement},
     instructions::{FunctionId, Instruction, JumpOffset, LiteralId, Register},
-    parser::ParserError,
     scope::{Scope, ScopeType},
     types::Literal,
 };
-use std::{cell::RefCell, fmt::Display, num::TryFromIntError};
-use thiserror::Error;
+use codespan_reporting::{diagnostic::Diagnostic, files::Files, term::termcolor::StandardStream};
+use std::{cell::RefCell, fmt::Display};
 
-impl From<ParserError> for CompilerError {
-    fn from(value: ParserError) -> Self {
-        CompilerError::ParserError { source: value }
-    }
-}
-
-#[derive(Debug, Error)]
+#[derive(Debug, thiserror::Error)]
 pub enum CompilerError {
-    #[error("{source}")]
-    ParserError { source: ParserError },
-    #[error("{cause}")]
-    GeneralError { cause: String },
-    #[error("variable '{0}' not found in scope", variable)]
-    VariableNotFound { variable: String },
-    #[error("variable '{0}' is not mutable", variable)]
-    MutationNotAllowed { variable: String },
-    #[error("integer conversion error: '{0}'")]
-    IntegerConversionError(#[from] TryFromIntError),
+    #[error("diagnostic")]
+    Diagnostic(Diagnostic<usize>),
 }
 
 #[derive(Default, Debug, PartialEq)]
@@ -88,6 +73,37 @@ impl Compiler {
     ) -> Result<CompiledProgram, CompilerError> {
         for statement in statements {
             self.compile_statement(statement)?;
+        }
+
+        let global_register_count = self.next_available_register;
+
+        Ok(CompiledProgram {
+            functions: self.functions,
+            global_code: self.bytecode.into_inner(),
+            global_register_count,
+            literals: self.literals,
+        })
+    }
+
+    pub fn compile_and_emit_diagnostics<'a, T>(
+        mut self,
+        statements: &Vec<Statement>,
+        writer: &StandardStream,
+        config: &codespan_reporting::term::Config,
+        files: &'a T,
+    ) -> Result<CompiledProgram, Box<dyn std::error::Error>>
+    where
+        T: Files<'a, FileId = usize> + 'a,
+    {
+        for statement in statements {
+            let statement = self.compile_statement(statement);
+            if let Err(e) = statement {
+                let CompilerError::Diagnostic(diagnostic) = e;
+                codespan_reporting::term::emit(&mut writer.lock(), config, files, &diagnostic)?;
+
+                // cause statuscode to be set
+                return Err("".into());
+            }
         }
 
         let global_register_count = self.next_available_register;
@@ -181,9 +197,9 @@ impl Compiler {
                 }
             }
             _ => {
-                return Err(CompilerError::GeneralError {
-                    cause: "function body must contain block".to_owned(),
-                })
+                let diagnostic =
+                    Diagnostic::bug().with_message("function body must contain a block");
+                return Err(CompilerError::Diagnostic(diagnostic));
             }
         }
 
@@ -241,9 +257,9 @@ impl Compiler {
 
             Ok(())
         } else {
-            Err(CompilerError::MutationNotAllowed {
-                variable: name.to_owned(),
-            })
+            let diagnostic = Diagnostic::error()
+                .with_message(format!("mutation not allowed for variable `{}`", name));
+            Err(CompilerError::Diagnostic(diagnostic))
         }
     }
 
@@ -258,9 +274,10 @@ impl Compiler {
                     ast::Operator::Minus => Instruction::PrefixSub { dest, rhs },
                     ast::Operator::Not => Instruction::PrefixNot { dest, rhs },
                     _ => {
-                        return Err(CompilerError::GeneralError {
-                            cause: "prefix expression only works with '-' and '!'".to_owned(),
-                        })
+                        let diagnostic = Diagnostic::error()
+                            .with_message("prefix expression only works for '-' and '!'");
+
+                        return Err(CompilerError::Diagnostic(diagnostic));
                     }
                 };
 
@@ -291,9 +308,9 @@ impl Compiler {
                         Instruction::LessThanOrEquals { dest, lhs, rhs }
                     }
                     _ => {
-                        return Err(CompilerError::GeneralError {
-                            cause: "infix expression only works for '+', '-', '/', '*'".to_owned(),
-                        })
+                        let diagnostic = Diagnostic::error()
+                            .with_message("infix expression only works for '+', '-', '/', '*'");
+                        return Err(CompilerError::Diagnostic(diagnostic));
                     }
                 };
 
@@ -330,11 +347,11 @@ impl Compiler {
 
                 Ok(reg)
             }
-            ast::Expression::Variable(name) => {
-                self.resolve(name).ok_or(CompilerError::VariableNotFound {
-                    variable: name.to_owned(),
-                })
-            }
+            ast::Expression::Variable(name) => self.resolve(name).ok_or_else(|| {
+                let diagnostic = Diagnostic::error()
+                    .with_message(format!("variable `{}` not found in scope", name));
+                CompilerError::Diagnostic(diagnostic)
+            }),
             ast::Expression::FunctionCall {
                 name: function_to_call,
                 args,
@@ -505,7 +522,12 @@ impl Compiler {
                 .len()
                 .try_into()
                 // 1 for going after if statement and 1 for going after jump that's might be added below
-                .map(|i: u16| i + 1u16 + offset)?,
+                .map(|i: u16| i + 1u16 + offset)
+                .map_err(|e| {
+                    let diagnostic =
+                        Diagnostic::error().with_message(format!("integer conversion error: {e}"));
+                    CompilerError::Diagnostic(diagnostic)
+                })?,
         };
 
         self.bytecode.borrow_mut().push(instruction);
@@ -577,7 +599,11 @@ impl Compiler {
             {
                 if *maybe_placeholder_offset == 0xDEAD {
                     bytecode[i] = Instruction::Jump {
-                        offset: offset.try_into().map(|o: JumpOffset| o + 1)?,
+                        offset: offset.try_into().map(|o: JumpOffset| o + 1).map_err(|e| {
+                            let diagnostic = Diagnostic::error()
+                                .with_message(format!("integer conversion error: {e}"));
+                            CompilerError::Diagnostic(diagnostic)
+                        })?,
                     }
                 }
             }
@@ -586,7 +612,11 @@ impl Compiler {
         }
 
         let instruction = Instruction::JumpReverse {
-            offset: body_size.try_into()?,
+            offset: body_size.try_into().map_err(|e| {
+                let diagnostic =
+                    Diagnostic::error().with_message(format!("integer conversion error: {e}"));
+                CompilerError::Diagnostic(diagnostic)
+            })?,
         };
 
         bytecode.push(instruction);

@@ -123,9 +123,8 @@ fn main_internal(no_color: bool) -> Result<(), Box<dyn std::error::Error>> {
             let lexer = Lexer::new(file_id, &buffer);
             let parser = Parser::new(lexer, &buffer);
 
-            let statements = parser
-                .collect_and_emit_diagnostics(writer, config, &code_reporting_file_db)
-                .ok_or("")?;
+            let statements =
+                parser.collect_and_emit_diagnostics(&writer, &config, &code_reporting_file_db)?;
 
             if !no_typecheck {
                 let typechecker = Typechecker::default();
@@ -133,7 +132,12 @@ fn main_internal(no_color: bool) -> Result<(), Box<dyn std::error::Error>> {
             }
 
             let compiler = Compiler::new();
-            let program = compiler.compile(&statements)?;
+            let program = compiler.compile_and_emit_diagnostics(
+                &statements,
+                &writer,
+                &config,
+                &code_reporting_file_db,
+            )?;
 
             let vm = VM::new(program);
 
@@ -155,9 +159,11 @@ fn main_internal(no_color: bool) -> Result<(), Box<dyn std::error::Error>> {
                     let lexer = Lexer::new(0, &buffer);
                     let parser = Parser::new(lexer, &buffer);
 
-                    let statements = parser
-                        .collect_and_emit_diagnostics(writer, config, &code_reporting_file_db)
-                        .ok_or("")?;
+                    let statements = parser.collect_and_emit_diagnostics(
+                        &writer,
+                        &config,
+                        &code_reporting_file_db,
+                    )?;
 
                     if typecheck {
                         let typechecker = Typechecker::default();
@@ -170,9 +176,11 @@ fn main_internal(no_color: bool) -> Result<(), Box<dyn std::error::Error>> {
                     let lexer = Lexer::new(0, &buffer);
                     let parser = Parser::new(lexer, &buffer);
 
-                    let statements = parser
-                        .collect_and_emit_diagnostics(writer, config, &code_reporting_file_db)
-                        .ok_or("")?;
+                    let statements = parser.collect_and_emit_diagnostics(
+                        &writer,
+                        &config,
+                        &code_reporting_file_db,
+                    )?;
 
                     if typecheck {
                         let typechecker = Typechecker::default();
@@ -189,9 +197,11 @@ fn main_internal(no_color: bool) -> Result<(), Box<dyn std::error::Error>> {
                     let parser = Parser::new(lexer, &buffer);
                     let typechecker = Typechecker::default();
 
-                    let statements = parser
-                        .collect_and_emit_diagnostics(writer, config, &code_reporting_file_db)
-                        .ok_or("")?;
+                    let statements = parser.collect_and_emit_diagnostics(
+                        &writer,
+                        &config,
+                        &code_reporting_file_db,
+                    )?;
 
                     typechecker.check(&statements)?;
                 }
@@ -222,7 +232,10 @@ fn main() -> ExitCode {
     match main_internal(no_color) {
         Ok(_) => ExitCode::SUCCESS,
         Err(e) => {
-            tracing::error!("{}", e);
+            let err = e.to_string();
+            if !err.is_empty() {
+                tracing::error!("{}", err);
+            }
             ExitCode::FAILURE
         }
     }

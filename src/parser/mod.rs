@@ -604,39 +604,27 @@ where
 
     pub fn collect_and_emit_diagnostics<T>(
         self,
-        writer: StandardStream,
-        config: codespan_reporting::term::Config,
+        writer: &StandardStream,
+        config: &codespan_reporting::term::Config,
         files: &'a T,
-    ) -> Option<Vec<Statement>>
+    ) -> Result<Vec<Statement>, Box<dyn std::error::Error>>
     where
         T: Files<'a, FileId = usize> + 'a,
     {
         let mut statements = Vec::new();
         for statement in self.into_iter() {
             if let Err(e) = statement {
-                match e {
-                    ParserError::Diagnostic(diagnostic) => {
-                        codespan_reporting::term::emit(
-                            &mut writer.lock(),
-                            &config,
-                            files,
-                            &diagnostic,
-                        )
-                        .ok()?;
-                    }
-                    #[allow(unreachable_patterns)]
-                    _ => {
-                        return None;
-                    }
-                }
+                let ParserError::Diagnostic(diagnostic) = e;
+                codespan_reporting::term::emit(&mut writer.lock(), config, files, &diagnostic)?;
 
-                break;
+                // cause statuscode to be set
+                return Err("".into());
             }
 
             statements.push(statement.unwrap());
         }
 
-        Some(statements)
+        Ok(statements)
     }
 }
 

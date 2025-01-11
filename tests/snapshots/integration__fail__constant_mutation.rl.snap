@@ -2,4 +2,4 @@
 source: tests/integration.rs
 expression: output
 ---
-ERROR plrs: variable 'x' is not mutable
+error: mutation not allowed for variable `x`
