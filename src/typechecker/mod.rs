@@ -9,11 +9,7 @@ use types::{DefinedType, TypecheckerScope};
 
 mod types;
 
-pub struct Typechecker<I>
-where
-    I: Iterator<Item = Result<Statement, parser::ParserError>>,
-{
-    parser: I,
+pub struct Typechecker {
     scope_stack: Vec<TypecheckerScope>,
     #[cfg(debug_assertions)]
     validated_types: Vec<String>,
@@ -76,17 +72,13 @@ fn recursively_find_all_return<'a>(
     }
 }
 
-impl<I> Typechecker<I>
-where
-    I: Iterator<Item = Result<Statement, parser::ParserError>>,
-{
-    pub fn new(parser: I) -> Self {
+impl Typechecker {
+    pub fn new() -> Self {
         let mut initial_scope = TypecheckerScope::new();
         // FIXME: read from map with macro or something to generate this
         initial_scope.define_function_return("print".to_owned(), DefinedType::Nil);
 
         Self {
-            parser,
             scope_stack: vec![initial_scope],
             #[cfg(debug_assertions)]
             validated_types: vec![],
@@ -538,17 +530,18 @@ where
     }
 
     // Once day we get "typechecked" AST, not yet...
-    pub fn check(mut self) -> Result<Vec<Statement>, TypecheckerError> {
-        let mut statements = Vec::new();
-        while let Some(statement) = self.parser.next() {
-            let statement = statement?;
-
-            self.typecheck_statement(&statement)?;
-
-            statements.push(statement);
+    pub fn check(mut self, statements: &[Statement]) -> Result<(), TypecheckerError> {
+        for statement in statements {
+            self.typecheck_statement(statement)?;
         }
 
         self.print_validation_if_debug();
-        Ok(statements)
+        Ok(())
+    }
+}
+
+impl Default for Typechecker {
+    fn default() -> Self {
+        Self::new()
     }
 }

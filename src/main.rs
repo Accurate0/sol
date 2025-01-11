@@ -1,3 +1,11 @@
+use clap::{Parser as _, Subcommand, ValueEnum};
+use codespan_reporting::{
+    files::SimpleFiles,
+    term::termcolor::{ColorChoice, StandardStream},
+};
+use compiler::Compiler;
+use lexer::Lexer;
+use parser::Parser;
 use std::{
     fs::File,
     io::{self, ErrorKind, Read},
@@ -5,11 +13,6 @@ use std::{
     process::ExitCode,
     str::FromStr,
 };
-
-use clap::{Parser as _, Subcommand, ValueEnum};
-use compiler::Compiler;
-use lexer::Lexer;
-use parser::Parser;
 use tracing::Level;
 use tracing_subscriber::{filter::Targets, layer::SubscriberExt, util::SubscriberInitExt};
 use typechecker::Typechecker;
@@ -27,9 +30,9 @@ mod typechecker;
 mod types;
 mod vm;
 
+// TODO: Better errors, like Rust
 // TODO: Add arrays that aren't just objects with number indexes
 // TODO: Better dump printing
-// TODO: Add line numbers to all errors?
 // TODO: Add ability to include other files? C-style #include? files that are included can't have
 //       global code, only the "main" file can... for now
 // TODO: Add generic statemap type thing passed to each stdlib function
@@ -99,32 +102,35 @@ fn read_file_to_string(path_unchecked: &str) -> Result<String, std::io::Error> {
     Ok(buffer)
 }
 
-fn main_internal() -> Result<(), Box<dyn std::error::Error>> {
+fn main_internal(no_color: bool) -> Result<(), Box<dyn std::error::Error>> {
     let args = Args::parse();
+
+    let mut code_reporting_file_db = SimpleFiles::new();
+    let color = if no_color {
+        ColorChoice::Never
+    } else {
+        ColorChoice::Auto
+    };
+
+    let writer = StandardStream::stderr(color);
+    let config = codespan_reporting::term::Config::default();
 
     match args.command {
         Commands::Run { file, no_typecheck } => {
             let buffer = read_file_to_string(&file)?;
+            let file_id = code_reporting_file_db.add(&file, &buffer);
 
-            let lexer = Lexer::new(&buffer);
+            let lexer = Lexer::new(file_id, &buffer);
             let parser = Parser::new(lexer, &buffer);
 
-            let statements = if no_typecheck {
-                let mut tokens = Vec::new();
-                for token in parser {
-                    if token.is_err() {
-                        tracing::error!("{}", token.unwrap_err());
-                        break;
-                    }
+            let statements = parser
+                .collect_and_emit_diagnostics(writer, config, &code_reporting_file_db)
+                .ok_or("")?;
 
-                    tokens.push(token.unwrap());
-                }
-
-                tokens
-            } else {
-                let typechecker = Typechecker::new(parser);
-                typechecker.check()?
-            };
+            if !no_typecheck {
+                let typechecker = Typechecker::default();
+                typechecker.check(&statements)?;
+            }
 
             let compiler = Compiler::new();
             let program = compiler.compile(&statements)?;
@@ -142,64 +148,52 @@ fn main_internal() -> Result<(), Box<dyn std::error::Error>> {
 
             match target {
                 DumpTarget::Tokens => {
-                    let tokens = Lexer::new(&buffer).collect::<Vec<_>>();
+                    let tokens = Lexer::new(0, &buffer).collect::<Vec<_>>();
                     tracing::info!("{:#?}", tokens);
                 }
                 DumpTarget::Ast => {
-                    let lexer = Lexer::new(&buffer);
+                    let lexer = Lexer::new(0, &buffer);
                     let parser = Parser::new(lexer, &buffer);
 
-                    let tokens = if typecheck {
-                        let typechecker = Typechecker::new(parser);
-                        typechecker.check()?
-                    } else {
-                        let mut tokens = Vec::new();
-                        for token in parser {
-                            if token.is_err() {
-                                tracing::error!("{}", token.unwrap_err());
-                                break;
-                            }
+                    let statements = parser
+                        .collect_and_emit_diagnostics(writer, config, &code_reporting_file_db)
+                        .ok_or("")?;
 
-                            tokens.push(token.unwrap());
-                        }
+                    if typecheck {
+                        let typechecker = Typechecker::default();
+                        typechecker.check(&statements)?;
+                    }
 
-                        tokens
-                    };
-
-                    tracing::info!("{tokens:#?}")
+                    tracing::info!("{statements:#?}")
                 }
                 DumpTarget::Bytecode => {
-                    let lexer = Lexer::new(&buffer);
+                    let lexer = Lexer::new(0, &buffer);
                     let parser = Parser::new(lexer, &buffer);
 
-                    let tokens = if typecheck {
-                        let typechecker = Typechecker::new(parser);
-                        typechecker.check()?
-                    } else {
-                        let mut tokens = Vec::new();
-                        for token in parser {
-                            if token.is_err() {
-                                tracing::error!("{}", token.unwrap_err());
-                                break;
-                            }
+                    let statements = parser
+                        .collect_and_emit_diagnostics(writer, config, &code_reporting_file_db)
+                        .ok_or("")?;
 
-                            tokens.push(token.unwrap());
-                        }
-
-                        tokens
-                    };
+                    if typecheck {
+                        let typechecker = Typechecker::default();
+                        typechecker.check(&statements)?;
+                    }
 
                     let compiler = Compiler::new();
 
-                    let program = compiler.compile(&tokens)?;
+                    let program = compiler.compile(&statements)?;
                     tracing::info!("{:#?}", program);
                 }
                 DumpTarget::Typecheck => {
-                    let lexer = Lexer::new(&buffer);
+                    let lexer = Lexer::new(0, &buffer);
                     let parser = Parser::new(lexer, &buffer);
-                    let typechecker = Typechecker::new(parser);
+                    let typechecker = Typechecker::default();
 
-                    typechecker.check()?;
+                    let statements = parser
+                        .collect_and_emit_diagnostics(writer, config, &code_reporting_file_db)
+                        .ok_or("")?;
+
+                    typechecker.check(&statements)?;
                 }
             }
         }
@@ -225,7 +219,7 @@ fn main() -> ExitCode {
         )
         .init();
 
-    match main_internal() {
+    match main_internal(no_color) {
         Ok(_) => ExitCode::SUCCESS,
         Err(e) => {
             tracing::error!("{}", e);

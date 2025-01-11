@@ -1,3 +1,3 @@
 test("testing");
 
-fn test(a) {}
+fn test(a: string) {}

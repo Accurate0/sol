@@ -14,7 +14,7 @@ fn complex_math() {
         "#
     .to_owned();
 
-    let lexer = Lexer::new(&input);
+    let lexer = Lexer::new(0, &input);
     let parser = Parser::new(lexer, &input);
     let compiler = Compiler::new();
 
@@ -42,7 +42,7 @@ fn math() {
         "#
     .to_owned();
 
-    let lexer = Lexer::new(&input);
+    let lexer = Lexer::new(0, &input);
     let parser = Parser::new(lexer, &input);
     let compiler = Compiler::new();
 
@@ -71,7 +71,7 @@ fn prefix() {
         "#
     .to_owned();
 
-    let lexer = Lexer::new(&input);
+    let lexer = Lexer::new(0, &input);
     let parser = Parser::new(lexer, &input);
     let compiler = Compiler::new();
 
@@ -100,7 +100,7 @@ fn prefix_boolean() {
         "#
     .to_owned();
 
-    let lexer = Lexer::new(&input);
+    let lexer = Lexer::new(0, &input);
     let parser = Parser::new(lexer, &input);
     let compiler = Compiler::new();
 
@@ -128,7 +128,7 @@ fn native_function() {
         "#
     .to_owned();
 
-    let lexer = Lexer::new(&input);
+    let lexer = Lexer::new(0, &input);
     let parser = Parser::new(lexer, &input);
     let compiler = Compiler::new();
 
@@ -161,7 +161,7 @@ fn native_function_with_return_value() {
         "#
     .to_owned();
 
-    let lexer = Lexer::new(&input);
+    let lexer = Lexer::new(0, &input);
     let parser = Parser::new(lexer, &input);
     let compiler = Compiler::new();
 
@@ -212,7 +212,7 @@ loop {
         "#
     .to_owned();
 
-    let lexer = Lexer::new(&input);
+    let lexer = Lexer::new(0, &input);
     let parser = Parser::new(lexer, &input);
     let compiler = Compiler::new();
 
@@ -266,7 +266,7 @@ print(x.test5.test6.test7);
         "#
     .to_owned();
 
-    let lexer = Lexer::new(&input);
+    let lexer = Lexer::new(0, &input);
     let parser = Parser::new(lexer, &input);
     let compiler = Compiler::new();
 

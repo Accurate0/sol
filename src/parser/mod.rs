@@ -3,12 +3,16 @@ use crate::{
     lexer::{Span, Token, TokenKind},
     types,
 };
-use ordermap::OrderMap;
-use std::{
-    iter::Peekable,
-    num::{ParseFloatError, ParseIntError},
+use codespan_reporting::{
+    diagnostic::{Diagnostic, Label},
+    files::Files,
+    term::termcolor::StandardStream,
 };
-use thiserror::Error;
+use ordermap::OrderMap;
+use std::iter::Peekable;
+
+mod error;
+pub use error::ParserError;
 
 pub struct Parser<'a, I>
 where
@@ -16,32 +20,6 @@ where
 {
     tokens: Peekable<I>,
     input: &'a str,
-}
-
-#[derive(Debug, Error)]
-pub enum ParserError {
-    #[error("expected token: {0} not found", expected)]
-    ExpectedTokenNotFound { expected: TokenKind },
-    #[error("expected token: got {0}, expected: {1:?}", actual, expected)]
-    InvalidToken {
-        expected: TokenKind,
-        actual: TokenKind,
-    },
-    #[error(
-        "unexpected token: {0:?}, {1} in function {2}",
-        token,
-        text,
-        in_function
-    )]
-    UnexpectedToken {
-        token: Token,
-        text: String,
-        in_function: &'static str,
-    },
-    #[error("error parsing float: {0}")]
-    ParseFloatError(#[from] ParseFloatError),
-    #[error("error parsing integer: {0}")]
-    ParseIntegerError(#[from] ParseIntError),
 }
 
 impl<'a, I> Parser<'a, I>
@@ -71,6 +49,7 @@ where
         *self.tokens.peek().unwrap_or(&Token::new(
             TokenKind::EndOfFile,
             Span {
+                file_id: 0,
                 start: 0,
                 end: 0,
                 line: 0,
@@ -186,9 +165,28 @@ where
         } else if text.starts_with('"') && text.ends_with('"') {
             ast::Expression::Literal(types::Literal::String(text[1..text.len() - 1].to_owned()))
         } else if text.contains('.') {
-            ast::Expression::Literal(types::Literal::Float(text.parse()?))
+            let float = text.parse::<f64>();
+            if float.is_err() {
+                let diagnostic = Diagnostic::error()
+                    .with_message("could not convert to float")
+                    .with_labels(vec![Label::primary(token.span().file_id, token.span())
+                        .with_message("this is not a valid float")]);
+
+                return Err(ParserError::Diagnostic(diagnostic));
+            }
+
+            ast::Expression::Literal(types::Literal::Float(float.unwrap()))
         } else {
-            ast::Expression::Literal(types::Literal::Integer(text.parse()?))
+            let integer = text.parse::<i64>();
+            if integer.is_err() {
+                let diagnostic = Diagnostic::error()
+                    .with_message("could not convert to integer")
+                    .with_labels(vec![Label::primary(token.span().file_id, token.span())
+                        .with_message("this is not a valid integer")]);
+
+                return Err(ParserError::Diagnostic(diagnostic));
+            }
+            ast::Expression::Literal(types::Literal::Integer(integer.unwrap()))
         };
 
         Ok(expr)
@@ -254,11 +252,19 @@ where
                 TokenKind::Literal => self.parse_literal(),
                 _ => {
                     let peeked_token = self.peek_token();
-                    Err(ParserError::UnexpectedToken {
-                        token: peeked_token,
-                        text: self.text(&peeked_token).to_owned(),
-                        in_function: stringify!(parse_expression + lhs),
-                    })
+
+                    let diagnostic = Diagnostic::error()
+                        .with_message("unexpected token")
+                        .with_labels(vec![Label::primary(
+                            peeked_token.span().file_id,
+                            peeked_token.span(),
+                        )
+                        .with_message(format!(
+                            "did not expect token of `{}` type",
+                            peeked_token.kind()
+                        ))]);
+
+                    Err(ParserError::Diagnostic(diagnostic))
                 }
             }
         };
@@ -287,11 +293,18 @@ where
                 _ => {
                     let peeked_token = self.peek_token();
 
-                    break Err(ParserError::UnexpectedToken {
-                        token: peeked_token,
-                        text: self.text(&peeked_token).to_owned(),
-                        in_function: stringify!(parse_expression + rhs),
-                    });
+                    let diagnostic = Diagnostic::error()
+                        .with_message("unexpected token")
+                        .with_labels(vec![Label::primary(
+                            peeked_token.span().file_id,
+                            peeked_token.span(),
+                        )
+                        .with_message(format!(
+                            "did not expect token of `{}` type",
+                            peeked_token.kind()
+                        ))]);
+
+                    break Err(ParserError::Diagnostic(diagnostic));
                 }
             };
 
@@ -497,11 +510,19 @@ where
             TokenKind::OpenBrace => self.parse_block(),
             _ => {
                 let peeked_token = self.peek_token();
-                Err(ParserError::UnexpectedToken {
-                    token: peeked_token,
-                    text: self.text(&peeked_token).to_owned(),
-                    in_function: stringify!(parse_statement),
-                })
+
+                let diagnostic = Diagnostic::error()
+                    .with_message("unexpected token")
+                    .with_labels(vec![Label::primary(
+                        peeked_token.span().file_id,
+                        peeked_token.span(),
+                    )
+                    .with_message(format!(
+                        "did not expect token of `{}` type",
+                        peeked_token.kind()
+                    ))]);
+
+                Err(ParserError::Diagnostic(diagnostic))
             }
         }
     }
@@ -536,15 +557,34 @@ where
     }
 
     pub fn consume(&mut self, expected: TokenKind) -> Result<Token, ParserError> {
-        let token = self
-            .next()
-            .ok_or(ParserError::ExpectedTokenNotFound { expected })?;
+        let token = self.next();
 
+        if token.is_none() {
+            let prev_token = self.peek_token();
+
+            let diagnostic = Diagnostic::error()
+                .with_message("unexpected token")
+                .with_labels(vec![Label::primary(
+                    prev_token.span().file_id,
+                    prev_token.span(),
+                )
+                .with_message(format!("expected type of `{}`", expected))]);
+
+            return Err(ParserError::Diagnostic(diagnostic));
+        }
+
+        let token = token.unwrap();
         if *token.kind() != expected {
-            return Err(ParserError::InvalidToken {
-                expected,
-                actual: *token.kind(),
-            });
+            let diagnostic = Diagnostic::error()
+                .with_message("unexpected token")
+                .with_labels(vec![Label::primary(token.span().file_id, token.span())
+                    .with_message(format!(
+                        "expected `{}`, got `{}`",
+                        expected,
+                        token.kind()
+                    ))]);
+
+            return Err(ParserError::Diagnostic(diagnostic));
         }
 
         Ok(token)
@@ -560,6 +600,43 @@ where
         } else {
             Some(token)
         }
+    }
+
+    pub fn collect_and_emit_diagnostics<T>(
+        self,
+        writer: StandardStream,
+        config: codespan_reporting::term::Config,
+        files: &'a T,
+    ) -> Option<Vec<Statement>>
+    where
+        T: Files<'a, FileId = usize> + 'a,
+    {
+        let mut statements = Vec::new();
+        for statement in self.into_iter() {
+            if let Err(e) = statement {
+                match e {
+                    ParserError::Diagnostic(diagnostic) => {
+                        codespan_reporting::term::emit(
+                            &mut writer.lock(),
+                            &config,
+                            files,
+                            &diagnostic,
+                        )
+                        .ok()?;
+                    }
+                    #[allow(unreachable_patterns)]
+                    _ => {
+                        return None;
+                    }
+                }
+
+                break;
+            }
+
+            statements.push(statement.unwrap());
+        }
+
+        Some(statements)
     }
 }
 
@@ -588,13 +665,16 @@ where
             }
             _ => {
                 let peeked_token = self.peek_token();
-                let e = ParserError::UnexpectedToken {
-                    token: peeked_token,
-                    text: self.text(&peeked_token).to_owned(),
-                    in_function: stringify!(parse),
-                };
 
-                Some(Err(e))
+                let diagnostic = Diagnostic::error()
+                    .with_message("unexpected token")
+                    .with_labels(vec![Label::primary(
+                        peeked_token.span().file_id,
+                        peeked_token.span(),
+                    )
+                    .with_message(format!("unexpected `{}`", peeked_token.kind()))]);
+
+                Some(Err(ParserError::Diagnostic(diagnostic)))
             }
         }
     }

@@ -6,6 +6,7 @@ use std::{
 };
 
 #[derive(Debug, Clone, PartialEq, Copy)]
+// TODO: for things like identifier, require a char to construct, used for diagnostic
 pub enum TokenKind {
     Comment,
     Identifier,
@@ -43,6 +44,7 @@ impl Display for TokenKind {
 
 #[derive(Debug, Clone, Copy)]
 pub struct Span {
+    pub file_id: usize,
     pub start: usize,
     pub end: usize,
     pub line: usize,
@@ -50,6 +52,12 @@ pub struct Span {
 
 impl From<Span> for Range<usize> {
     fn from(span: Span) -> Self {
+        span.start..span.end
+    }
+}
+
+impl From<&Span> for Range<usize> {
+    fn from(span: &Span) -> Self {
         span.start..span.end
     }
 }
@@ -103,6 +111,10 @@ impl Token {
         &self.kind
     }
 
+    pub fn span(&self) -> &Span {
+        &self.span
+    }
+
     pub fn text<'a>(&self, input: &'a str) -> &'a str {
         &input[self.span]
     }
@@ -113,14 +125,17 @@ pub struct Lexer<'a> {
 }
 
 pub struct Cursor<'a> {
+    // FIXME: ??
+    file_id: usize,
     chars: Peekable<Chars<'a>>,
     current_consumed: usize,
     line: usize,
 }
 
 impl<'a> Cursor<'a> {
-    pub fn new(chars: Chars<'a>) -> Self {
+    pub fn new(file_id: usize, chars: Chars<'a>) -> Self {
         Self {
+            file_id,
             chars: chars.peekable(),
             current_consumed: 0,
             line: 1,
@@ -172,6 +187,7 @@ impl<'a> Cursor<'a> {
         Token::new(
             TokenKind::Identifier,
             Span {
+                file_id: self.file_id,
                 start,
                 end: self.current(),
                 line: self.line,
@@ -202,6 +218,7 @@ impl<'a> Cursor<'a> {
         Token::new(
             TokenKind::Literal,
             Span {
+                file_id: self.file_id,
                 start,
                 end: self.current(),
                 line: self.line,
@@ -219,6 +236,7 @@ impl<'a> Cursor<'a> {
                 return Token::new(
                     TokenKind::Literal,
                     Span {
+                        file_id: self.file_id,
                         start,
                         end: self.current(),
                         line: self.line,
@@ -244,6 +262,7 @@ impl<'a> Cursor<'a> {
         Token::new(
             token_kind,
             Span {
+                file_id: self.file_id,
                 start,
                 end: self.current(),
                 line: self.line,
@@ -257,6 +276,7 @@ impl<'a> Cursor<'a> {
             return Token::new(
                 TokenKind::EndOfFile,
                 Span {
+                    file_id: self.file_id,
                     start: self.current(),
                     end: self.current(),
                     line: self.line,
@@ -265,6 +285,7 @@ impl<'a> Cursor<'a> {
         }
 
         let single_char_span = Span {
+            file_id: self.file_id,
             start: self.current() - 1,
             end: self.current(),
             line: self.line,
@@ -277,6 +298,7 @@ impl<'a> Cursor<'a> {
                 Token::new(
                     TokenKind::Equal,
                     Span {
+                        file_id: self.file_id,
                         start: self.current() - 2,
                         end: self.current(),
                         line: self.line,
@@ -290,6 +312,7 @@ impl<'a> Cursor<'a> {
                 Token::new(
                     TokenKind::GreaterThanOrEquals,
                     Span {
+                        file_id: self.file_id,
                         start: self.current() - 2,
                         end: self.current(),
                         line: self.line,
@@ -303,6 +326,7 @@ impl<'a> Cursor<'a> {
                 Token::new(
                     TokenKind::LessThanOrEquals,
                     Span {
+                        file_id: self.file_id,
                         start: self.current() - 2,
                         end: self.current(),
                         line: self.line,
@@ -325,6 +349,7 @@ impl<'a> Cursor<'a> {
                 Token::new(
                     TokenKind::NotEqual,
                     Span {
+                        file_id: self.file_id,
                         start: self.current() - 2,
                         end: self.current(),
                         line: self.line,
@@ -339,6 +364,7 @@ impl<'a> Cursor<'a> {
             ';' => Token::new(
                 TokenKind::EndOfLine,
                 Span {
+                    file_id: self.file_id,
                     start: self.current() - 1,
                     end: self.current(),
                     line: self.line,
@@ -350,6 +376,7 @@ impl<'a> Cursor<'a> {
                 Token::new(
                     TokenKind::Whitespace,
                     Span {
+                        file_id: self.file_id,
                         start: 0,
                         end: 0,
                         line: self.line,
@@ -359,6 +386,7 @@ impl<'a> Cursor<'a> {
             ':' => Token::new(
                 TokenKind::Colon,
                 Span {
+                    file_id: self.file_id,
                     start: self.current() - 1,
                     end: self.current(),
                     line: self.line,
@@ -367,6 +395,7 @@ impl<'a> Cursor<'a> {
             '.' => Token::new(
                 TokenKind::Dot,
                 Span {
+                    file_id: self.file_id,
                     start: self.current() - 1,
                     end: self.current(),
                     line: self.line,
@@ -375,6 +404,7 @@ impl<'a> Cursor<'a> {
             c if c.is_ascii_whitespace() => Token::new(
                 TokenKind::Whitespace,
                 Span {
+                    file_id: self.file_id,
                     start: 0,
                     end: 0,
                     line: self.line,
@@ -404,9 +434,9 @@ impl Iterator for Lexer<'_> {
 }
 
 impl<'a> Lexer<'a> {
-    pub fn new(contents: &'a str) -> Self {
+    pub fn new(file_id: usize, contents: &'a str) -> Self {
         Self {
-            cursor: Cursor::new(contents.chars()),
+            cursor: Cursor::new(file_id, contents.chars()),
         }
     }
 }

@@ -8,7 +8,7 @@ fn criterion_benchmark(c: &mut Criterion) {
 
     c.bench_function("lexer", |b| {
         b.iter_batched(
-            || Lexer::new(input),
+            || Lexer::new(0, input),
             move |lexer| {
                 let _ = lexer.collect::<Vec<_>>();
             },
@@ -19,7 +19,7 @@ fn criterion_benchmark(c: &mut Criterion) {
     c.bench_function("parser", |b| {
         b.iter_batched(
             || {
-                let lexer = Lexer::new(input);
+                let lexer = Lexer::new(0, input);
                 Parser::new(lexer, input)
             },
             move |parser| {

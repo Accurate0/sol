@@ -9,7 +9,7 @@ fn small_input() {
         "#
     .to_owned();
 
-    let mut lexer = Lexer::new(&input);
+    let mut lexer = Lexer::new(0, &input);
     let parser = Parser::new(&mut lexer, &input);
 
     let mut statements = Vec::new();
@@ -62,7 +62,7 @@ fn new_function(arg1: int, arg2: int, arg3: int) {
 }"#
     .to_owned();
 
-    let mut lexer = Lexer::new(&input);
+    let mut lexer = Lexer::new(0, &input);
     let parser = Parser::new(&mut lexer, &input);
 
     let mut statements = Vec::new();
@@ -87,7 +87,7 @@ fn complex_math() {
         "#
     .to_owned();
 
-    let mut lexer = Lexer::new(&input);
+    let mut lexer = Lexer::new(0, &input);
     let parser = Parser::new(&mut lexer, &input);
     let mut statements = Vec::new();
 
@@ -112,7 +112,7 @@ fn math() {
         "#
     .to_owned();
 
-    let mut lexer = Lexer::new(&input);
+    let mut lexer = Lexer::new(0, &input);
     let parser = Parser::new(&mut lexer, &input);
     let mut statements = Vec::new();
 
@@ -139,7 +139,7 @@ fn large_input() {
         "#
     .to_owned();
 
-    let mut lexer = Lexer::new(&input);
+    let mut lexer = Lexer::new(0, &input);
     let parser = Parser::new(&mut lexer, &input);
 
     let mut statements = Vec::new();
@@ -169,7 +169,7 @@ fn function_call_return() {
         "#
     .to_owned();
 
-    let mut lexer = Lexer::new(&input);
+    let mut lexer = Lexer::new(0, &input);
     let parser = Parser::new(&mut lexer, &input);
     let mut statements = Vec::new();
 
@@ -195,7 +195,7 @@ fn useless_expression() {
         "#
     .to_owned();
 
-    let mut lexer = Lexer::new(&input);
+    let mut lexer = Lexer::new(0, &input);
     let parser = Parser::new(&mut lexer, &input);
 
     let mut statements = Vec::new();
@@ -225,7 +225,7 @@ fn function_call_with_addition() {
         "#
     .to_owned();
 
-    let mut lexer = Lexer::new(&input);
+    let mut lexer = Lexer::new(0, &input);
     let parser = Parser::new(&mut lexer, &input);
     let mut statements = Vec::new();
 
@@ -253,7 +253,7 @@ fn variable_and_operation() {
         "#
     .to_owned();
 
-    let mut lexer = Lexer::new(&input);
+    let mut lexer = Lexer::new(0, &input);
     let parser = Parser::new(&mut lexer, &input);
     let mut statements = Vec::new();
 
@@ -279,7 +279,7 @@ fn variable_mutation() {
         "#
     .to_owned();
 
-    let mut lexer = Lexer::new(&input);
+    let mut lexer = Lexer::new(0, &input);
     let parser = Parser::new(&mut lexer, &input);
     let mut statements = Vec::new();
 
@@ -304,7 +304,7 @@ fn prefix() {
         "#
     .to_owned();
 
-    let mut lexer = Lexer::new(&input);
+    let mut lexer = Lexer::new(0, &input);
     let parser = Parser::new(&mut lexer, &input);
     let mut statements = Vec::new();
 
@@ -330,7 +330,7 @@ fn prefix_boolean() {
         "#
     .to_owned();
 
-    let mut lexer = Lexer::new(&input);
+    let mut lexer = Lexer::new(0, &input);
     let parser = Parser::new(&mut lexer, &input);
     let mut statements = Vec::new();
 
@@ -396,7 +396,7 @@ if false {
     "#
     .to_owned();
 
-    let mut lexer = Lexer::new(&input);
+    let mut lexer = Lexer::new(0, &input);
     let parser = Parser::new(&mut lexer, &input);
     let mut statements = Vec::new();
 
@@ -439,7 +439,7 @@ loop {
     "#
     .to_owned();
 
-    let mut lexer = Lexer::new(&input);
+    let mut lexer = Lexer::new(0, &input);
     let parser = Parser::new(&mut lexer, &input);
     let mut statements = Vec::new();
 
@@ -488,7 +488,7 @@ print(x.test5.test6.test7);
     "#
     .to_owned();
 
-    let mut lexer = Lexer::new(&input);
+    let mut lexer = Lexer::new(0, &input);
     let parser = Parser::new(&mut lexer, &input);
     let mut statements = Vec::new();
 

@@ -8,7 +8,7 @@ fn not() {
             let x = !true;
             }"#;
 
-    let lexer = Lexer::new(input);
+    let lexer = Lexer::new(0, input);
     let tokens = lexer.into_iter().collect::<Vec<_>>();
 
     assert_debug_snapshot!(tokens);
@@ -22,7 +22,7 @@ fn complex_math() {
             }
         "#;
 
-    let lexer = Lexer::new(input);
+    let lexer = Lexer::new(0, input);
     let tokens = lexer.into_iter().collect::<Vec<_>>();
 
     assert_debug_snapshot!(tokens);
@@ -36,7 +36,7 @@ fn math() {
             }
         "#;
 
-    let lexer = Lexer::new(input);
+    let lexer = Lexer::new(0, input);
     let tokens = lexer.into_iter().collect::<Vec<_>>();
 
     assert_debug_snapshot!(tokens);
@@ -49,7 +49,7 @@ fn small_input() {
             fn test() {}
         "#;
 
-    let lexer = Lexer::new(input);
+    let lexer = Lexer::new(0, input);
     let tokens = lexer.into_iter().collect::<Vec<_>>();
 
     assert_debug_snapshot!(tokens);
@@ -89,7 +89,7 @@ fn new_function(arg1, arg2, arg3) {
 }
 }"#;
 
-    let lexer = Lexer::new(input);
+    let lexer = Lexer::new(0, input);
     let tokens = lexer.into_iter().collect::<Vec<_>>();
 
     assert_debug_snapshot!(tokens);
@@ -105,7 +105,7 @@ fn large_input() {
         }
         "#;
 
-    let lexer = Lexer::new(input);
+    let lexer = Lexer::new(0, input);
     let tokens = lexer.into_iter().collect::<Vec<_>>();
 
     assert_debug_snapshot!(tokens);
@@ -143,7 +143,7 @@ print(x.test5.test6);
 print(x.test5.test6.test7);
         "#;
 
-    let lexer = Lexer::new(input);
+    let lexer = Lexer::new(0, input);
     let tokens = lexer.into_iter().collect::<Vec<_>>();
 
     assert_debug_snapshot!(tokens);

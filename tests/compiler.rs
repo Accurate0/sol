@@ -35,7 +35,7 @@ main();
         "#
     .to_owned();
 
-    let mut lexer = Lexer::new(&input);
+    let mut lexer = Lexer::new(0, &input);
     let parser = Parser::new(&mut lexer, &input);
     let compiler = Compiler::new();
 
@@ -61,7 +61,7 @@ x = 2;
         "#
     .to_owned();
 
-    let mut lexer = Lexer::new(&input);
+    let mut lexer = Lexer::new(0, &input);
     let parser = Parser::new(&mut lexer, &input);
     let compiler = Compiler::new();
 
@@ -87,7 +87,7 @@ let y = -(x + 3);
         "#
     .to_owned();
 
-    let mut lexer = Lexer::new(&input);
+    let mut lexer = Lexer::new(0, &input);
     let parser = Parser::new(&mut lexer, &input);
     let compiler = Compiler::new();
 
@@ -113,7 +113,7 @@ let y = !x;
         "#
     .to_owned();
 
-    let mut lexer = Lexer::new(&input);
+    let mut lexer = Lexer::new(0, &input);
     let parser = Parser::new(&mut lexer, &input);
     let compiler = Compiler::new();
 
@@ -144,7 +144,7 @@ if false {
         "#
     .to_owned();
 
-    let mut lexer = Lexer::new(&input);
+    let mut lexer = Lexer::new(0, &input);
     let parser = Parser::new(&mut lexer, &input);
     let compiler = Compiler::new();
 
@@ -212,7 +212,7 @@ if false {
         "#
     .to_owned();
 
-    let mut lexer = Lexer::new(&input);
+    let mut lexer = Lexer::new(0, &input);
     let parser = Parser::new(&mut lexer, &input);
     let compiler = Compiler::new();
 
@@ -257,7 +257,7 @@ loop {
         "#
     .to_owned();
 
-    let mut lexer = Lexer::new(&input);
+    let mut lexer = Lexer::new(0, &input);
     let parser = Parser::new(&mut lexer, &input);
     let compiler = Compiler::new();
 
@@ -308,7 +308,7 @@ print(x.test5.test6.test7);
         "#
     .to_owned();
 
-    let mut lexer = Lexer::new(&input);
+    let mut lexer = Lexer::new(0, &input);
     let parser = Parser::new(&mut lexer, &input);
     let compiler = Compiler::new();
 
