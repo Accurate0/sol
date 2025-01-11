@@ -94,13 +94,14 @@ impl Typechecker {
             }
         }
 
+        #[cfg(all(not(test), debug_assertions))]
         self.validated_types.clear();
     }
 
     #[inline(always)]
-    fn add_validated_types_for_debug(&mut self, s: String) {
+    fn add_validated_types_for_debug(&mut self, _s: String) {
         #[cfg(debug_assertions)]
-        self.validated_types.push(s);
+        self.validated_types.push(_s);
     }
 
     fn add_scope(&mut self) {
@@ -511,6 +512,7 @@ impl Typechecker {
             Some(s) => {
                 let defined_type = DefinedType::try_from(s)?;
                 if defined_type == expression_type_name {
+                    #[cfg(debug_assertions)]
                     self.add_validated_types_for_debug(format!(
                         "{:8} -> defined: {defined_type}, expression: {expression_type_name}",
                         in_statement
