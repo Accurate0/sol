@@ -1,5 +1,6 @@
 use crate::{
     ast::{self, Expression, Statement},
+    error::DiagnosticEmitted,
     instructions::{FunctionId, Instruction, JumpOffset, LiteralId, Register},
     scope::{Scope, ScopeType},
     types::Literal,
@@ -102,7 +103,7 @@ impl Compiler {
                 codespan_reporting::term::emit(&mut writer.lock(), config, files, &diagnostic)?;
 
                 // cause statuscode to be set
-                return Err("".into());
+                return Err(DiagnosticEmitted.into());
             }
         }
 

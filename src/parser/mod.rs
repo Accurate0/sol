@@ -1,5 +1,6 @@
 use crate::{
     ast::{self, FunctionParameter, Statement},
+    error::DiagnosticEmitted,
     lexer::{Span, Token, TokenKind},
     types,
 };
@@ -618,7 +619,7 @@ where
                 codespan_reporting::term::emit(&mut writer.lock(), config, files, &diagnostic)?;
 
                 // cause statuscode to be set
-                return Err("".into());
+                return Err(DiagnosticEmitted.into());
             }
 
             statements.push(statement.unwrap());

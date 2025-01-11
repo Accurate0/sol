@@ -4,6 +4,7 @@ use codespan_reporting::{
     term::termcolor::{ColorChoice, StandardStream},
 };
 use compiler::Compiler;
+use error::DiagnosticEmitted;
 use lexer::Lexer;
 use parser::Parser;
 use std::{
@@ -20,6 +21,7 @@ use vm::VM;
 
 mod ast;
 mod compiler;
+mod error;
 mod instructions;
 mod lexer;
 mod macros;
@@ -232,10 +234,12 @@ fn main() -> ExitCode {
     match main_internal(no_color) {
         Ok(_) => ExitCode::SUCCESS,
         Err(e) => {
-            let err = e.to_string();
-            if !err.is_empty() {
-                tracing::error!("{}", err);
+            let err = e.downcast_ref::<DiagnosticEmitted>();
+
+            if err.is_none() {
+                tracing::error!("{}", e);
             }
+
             ExitCode::FAILURE
         }
     }
