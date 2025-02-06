@@ -4,21 +4,21 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-clap = { version = "4.5.20", features = ["derive"] }
+clap = { version = "4.5.31", features = ["derive"] }
 fxhash = "0.2.1"
-thiserror = "1.0.65"
-tracing = "0.1.40"
-tracing-subscriber = "0.3.18"
-itertools = "0.13.0"
-phf = { version = "0.11.2", features = ["macros"] }
-ordermap = "0.5.3"
+thiserror = "2.0.11"
+tracing = "0.1.41"
+tracing-subscriber = "0.3.19"
+itertools = "0.14.0"
+phf = { version = "0.11.3", features = ["macros"] }
+ordermap = "0.5.5"
 codespan-reporting = "0.11.1"
 
 [dev-dependencies]
 pretty_assertions = "1.4.1"
 assert_cmd = "2.0.16"
-insta = "1.41.0"
-rstest = "0.23.0"
+insta = "1.42.1"
+rstest = "0.24.0"
 criterion = { version = "0.5", features = ["html_reports"] }
 
 [[bench]]
