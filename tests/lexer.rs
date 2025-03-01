@@ -1,5 +1,5 @@
 use insta::assert_debug_snapshot;
-use plrs::lexer::Lexer;
+use sol::lexer::Lexer;
 
 #[test]
 fn not() {

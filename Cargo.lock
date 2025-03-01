@@ -559,6 +559,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b15813163c1d831bf4a13c3610c05c0d03b39feb07f7e09fa234dac9b15aaf39"
 
 [[package]]
+name = "pathdiff"
+version = "0.2.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "df94ce210e5bc13cb6651479fa48d14f601d9858cfe0467f43ae157023b938d3"
+
+[[package]]
 name = "phf"
 version = "0.11.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -658,26 +664,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "51bae2ac328883f7acdfea3d66a7c35751187f870bc81f94563733a154d7a670"
 dependencies = [
  "plotters-backend",
-]
-
-[[package]]
-name = "plrs"
-version = "0.1.0"
-dependencies = [
- "assert_cmd",
- "clap",
- "codespan-reporting",
- "criterion",
- "fxhash",
- "insta",
- "itertools 0.14.0",
- "ordermap",
- "phf",
- "pretty_assertions",
- "rstest",
- "thiserror",
- "tracing",
- "tracing-subscriber",
 ]
 
 [[package]]
@@ -947,6 +933,27 @@ name = "smallvec"
 version = "1.14.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7fcf8323ef1faaee30a44a340193b1ac6814fd9b7b4e88e9d4519a3e4abe1cfd"
+
+[[package]]
+name = "sol"
+version = "0.1.0"
+dependencies = [
+ "assert_cmd",
+ "clap",
+ "codespan-reporting",
+ "criterion",
+ "fxhash",
+ "insta",
+ "itertools 0.14.0",
+ "ordermap",
+ "pathdiff",
+ "phf",
+ "pretty_assertions",
+ "rstest",
+ "thiserror",
+ "tracing",
+ "tracing-subscriber",
+]
 
 [[package]]
 name = "strsim"

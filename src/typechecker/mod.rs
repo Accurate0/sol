@@ -88,7 +88,7 @@ impl Typechecker {
     #[inline(always)]
     pub fn print_validation_if_debug(&mut self) {
         #[cfg(all(not(test), debug_assertions))]
-        if std::env::var("PLRS_TEST").is_err() {
+        if std::env::var("SOL_TEST").is_err() {
             for validated_type in &self.validated_types {
                 tracing::info!("{}", validated_type)
             }

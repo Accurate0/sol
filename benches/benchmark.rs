@@ -1,5 +1,5 @@
 use criterion::{criterion_group, criterion_main, BatchSize, Criterion};
-use plrs::{lexer::Lexer, parser::Parser};
+use sol::{lexer::Lexer, parser::Parser};
 
 // FIXME: errors are causing the benchmark to basically increase in memory forever
 

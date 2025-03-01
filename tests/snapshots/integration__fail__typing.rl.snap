@@ -2,4 +2,4 @@
 source: tests/integration.rs
 expression: output
 ---
-ERROR plrs: type error: expected String but got I64
+ERROR sol: type error: expected String but got I64

@@ -1,5 +1,5 @@
 [package]
-name = "plrs"
+name = "sol"
 version = "0.1.0"
 edition = "2021"
 
@@ -20,13 +20,14 @@ assert_cmd = "2.0.16"
 insta = "1.42.1"
 rstest = "0.24.0"
 criterion = { version = "0.5", features = ["html_reports"] }
+pathdiff = "0.2.3"
 
 [[bench]]
 name = "benchmark"
 harness = false
 
 [[bin]]
-name = "plrs"
+name = "sol"
 bench = false
 
 [lib]

@@ -1,5 +1,5 @@
 use insta::assert_compact_debug_snapshot;
-use plrs::{
+use sol::{
     compiler::Compiler,
     lexer::Lexer,
     parser::Parser,

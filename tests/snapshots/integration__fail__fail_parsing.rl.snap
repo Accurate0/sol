@@ -3,7 +3,7 @@ source: tests/integration.rs
 expression: output
 ---
 error: unexpected token
-  ┌─ /home/anurag/Projects/plrs/tests/files/fail/fail_parsing.rl:1:10
+  ┌─ tests/files/fail/fail_parsing.rl:1:10
   │
 1 │ fn test( {
   │          ^ expected `Identifier`, got `OpenBrace`

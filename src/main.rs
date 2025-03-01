@@ -216,7 +216,7 @@ fn main_internal(no_color: bool) -> Result<(), Box<dyn std::error::Error>> {
 
 fn main() -> ExitCode {
     let no_color = std::env::var("NO_COLOR").is_ok_and(|v| !v.is_empty());
-    let log_level = match std::env::var("PLRS_LOG").ok() {
+    let log_level = match std::env::var("SOL_LOG").ok() {
         Some(l) => Level::from_str(&l).unwrap_or(Level::INFO),
         None => Level::INFO,
     };

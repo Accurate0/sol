@@ -4,4 +4,4 @@ expression: output
 ---
 pass
 pass 2
-ERROR plrs: no function matching name 'nested3' found
+ERROR sol: no function matching name 'nested3' found

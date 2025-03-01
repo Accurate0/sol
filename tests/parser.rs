@@ -1,5 +1,5 @@
 use insta::assert_debug_snapshot;
-use plrs::{lexer::Lexer, parser::Parser};
+use sol::{lexer::Lexer, parser::Parser};
 
 #[test]
 fn small_input() {

@@ -3,7 +3,7 @@ source: tests/integration.rs
 expression: output
 ---
 error: unexpected token
-  ┌─ /home/anurag/Projects/plrs/tests/files/fail/constant_literal_only.rl:1:16
+  ┌─ tests/files/fail/constant_literal_only.rl:1:16
   │
 1 │ const test = 2 + 2;
   │                ^ expected `EndOfLine`, got `Add`

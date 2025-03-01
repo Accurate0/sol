@@ -2,4 +2,4 @@
 source: tests/integration.rs
 expression: output
 ---
-ERROR plrs: type error: expected numeric but got ["I64", "String"]
+ERROR sol: type error: expected numeric but got ["I64", "String"]

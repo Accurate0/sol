@@ -1,17 +1,18 @@
 use assert_cmd::cargo::CommandCargoExt;
 use insta::assert_snapshot;
 use rstest::rstest;
-use std::{path::PathBuf, process::Command};
+use std::{env::current_dir, path::PathBuf, process::Command};
 
 #[rstest]
 fn run_success(#[files("tests/files/success/*.rl")] path: PathBuf) {
+    let relative_path = pathdiff::diff_paths(&path, current_dir().unwrap()).unwrap();
     let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
     let cmd = cmd
         .arg("run")
-        .arg(&path)
+        .arg(&relative_path)
         .env("NO_COLOR", "true")
-        .env("PLRS_TEST", "true")
-        .env("PLRS_LOG", "info");
+        .env("SOL_TEST", "true")
+        .env("SOL_LOG", "info");
 
     let output = cmd.output().unwrap();
 
@@ -28,13 +29,14 @@ fn run_success(#[files("tests/files/success/*.rl")] path: PathBuf) {
 
 #[rstest]
 fn run_fail(#[files("tests/files/fail/*.rl")] path: PathBuf) {
+    let relative_path = pathdiff::diff_paths(&path, current_dir().unwrap()).unwrap();
     let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
     let cmd = cmd
         .arg("run")
-        .arg(&path)
+        .arg(&relative_path)
         .env("NO_COLOR", "true")
-        .env("PLRS_TEST", "true")
-        .env("PLRS_LOG", "info");
+        .env("SOL_TEST", "true")
+        .env("SOL_LOG", "info");
 
     let output = cmd.output().unwrap();
 
