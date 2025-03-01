@@ -4,7 +4,7 @@ use rstest::rstest;
 use std::{env::current_dir, path::PathBuf, process::Command};
 
 #[rstest]
-fn run_success(#[files("tests/files/success/*.rl")] path: PathBuf) {
+fn run_success(#[files("tests/files/success/*.sol")] path: PathBuf) {
     let relative_path = pathdiff::diff_paths(&path, current_dir().unwrap()).unwrap();
     let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
     let cmd = cmd
@@ -28,7 +28,7 @@ fn run_success(#[files("tests/files/success/*.rl")] path: PathBuf) {
 }
 
 #[rstest]
-fn run_fail(#[files("tests/files/fail/*.rl")] path: PathBuf) {
+fn run_fail(#[files("tests/files/fail/*.sol")] path: PathBuf) {
     let relative_path = pathdiff::diff_paths(&path, current_dir().unwrap()).unwrap();
     let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
     let cmd = cmd
