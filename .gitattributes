@@ -1,1 +1,2 @@
 tests/files/* linguist-vendored
+benches/*.sol linguist-vendored
