@@ -454,13 +454,18 @@ impl Typechecker {
                         what: "variable",
                     })
             }
-            Expression::FunctionCall { name, args: _ } => self
-                .resolve_function_return_type(name)
-                .cloned()
-                .ok_or_else(|| TypecheckerError::NotFound {
-                    val: name.to_owned(),
-                    what: "function",
-                }),
+            Expression::FunctionCall { name, args } => {
+                for arg in args {
+                    self.typecheck_expression(arg)?;
+                }
+
+                self.resolve_function_return_type(name)
+                    .cloned()
+                    .ok_or_else(|| TypecheckerError::NotFound {
+                        val: name.to_owned(),
+                        what: "function",
+                    })
+            }
             Expression::Object { fields } => {
                 let mut typed_fields = OrderMap::<String, DefinedType>::default();
 
@@ -481,7 +486,11 @@ impl Typechecker {
                             let path_to_take = path.iter().skip(1);
                             let mut last_item = None;
                             for item in path_to_take {
-                                last_item = fields.get(item)
+                                let new_item = fields.get(item);
+                                // FIXME: i think this is weird
+                                if new_item.is_some() {
+                                    last_item = new_item;
+                                }
                             }
 
                             if let Some(last_item) = last_item {
@@ -496,6 +505,45 @@ impl Typechecker {
                     unreachable!();
                 }
             }
+            Expression::Array { this } => {
+                let mut defined_types = Vec::new();
+                for value in this {
+                    defined_types.push(self.typecheck_expression(value)?);
+                }
+
+                let all_equal = defined_types.into_iter().all_equal_value();
+                match all_equal {
+                    Ok(inferred_type) => {
+                        self.add_validated_types_for_debug(format!(
+                            "{:8} -> inferred: {inferred_type}",
+                            "array"
+                        ));
+
+                        Ok(DefinedType::Array(Box::new(inferred_type)))
+                    }
+                    Err(types) => {
+                        if let Some((mismatch1, mismatch2)) = types {
+                            Err(TypecheckerError::TypeMismatchBothWrong {
+                                mismatch1: mismatch1.to_string(),
+                                mismatch2: mismatch2.to_string(),
+                            })
+                        } else {
+                            self.add_validated_types_for_debug(format!("{:8} -> nil", "array"));
+                            Ok(DefinedType::Array(Box::new(DefinedType::Nil)))
+                        }
+                    }
+                }
+            }
+            Expression::ArrayAccess { name, index: _ } => self
+                .resolve_type(name)
+                .ok_or_else(|| TypecheckerError::NotFound {
+                    val: name.to_owned(),
+                    what: "variable",
+                })
+                .and_then(|t| match t {
+                    DefinedType::Array(defined_type) => Ok(*defined_type.clone()),
+                    t => Err(TypecheckerError::UnexpectedType { got: t.to_string() }),
+                }),
         }
     }
 

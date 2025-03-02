@@ -1,5 +1,5 @@
 use crate::compiler;
-use crate::types::{Literal, Object, ObjectValue};
+use crate::types::{Array, Literal, Object, ObjectValue};
 use crate::{
     compiler::CompiledProgram,
     impl_binary_comparator, impl_binary_op,
@@ -75,6 +75,7 @@ impl VM {
                 VMValue::Literal(l) => tracing::debug!("{i} {:?}", l),
                 VMValue::Function(f) => tracing::debug!("{i} {:?}", f.name),
                 VMValue::Object(object) => tracing::debug!("{i} {:?}", object),
+                VMValue::Array(array) => tracing::debug!("{i} {:?}", array),
             }
         }
 
@@ -401,7 +402,10 @@ impl VM {
                     let register_value = &registers[src];
                     // FIXME: are we type checked?
                     match register_value {
-                        VMValue::Object(_) | VMValue::Function(_) | VMValue::Empty => {
+                        VMValue::Object(_)
+                        | VMValue::Function(_)
+                        | VMValue::Empty
+                        | VMValue::Array(_) => {
                             unreachable!()
                         }
                         VMValue::Literal(l) => match l.as_ref() {
@@ -444,6 +448,7 @@ impl VM {
                         VMValue::Literal(lit) => ObjectValue::Literal(lit.as_ref().clone()),
                         VMValue::Object(object) => ObjectValue::Object(object.clone()),
                         VMValue::Function(f) => ObjectValue::Function(f.clone()),
+                        VMValue::Array(array) => ObjectValue::Array(array.clone()),
                         _ => unreachable!(),
                     };
 
@@ -479,6 +484,87 @@ impl VM {
                                         VMValue::Literal(Cow::Owned(literal.clone()))
                                     }
                                     ObjectValue::Function(func) => VMValue::Function(func.clone()),
+                                    ObjectValue::Array(rc) => VMValue::Array(rc.clone()),
+                                    ObjectValue::Nil => VMValue::Empty,
+                                }
+                            }
+                            None => VMValue::Empty,
+                        }
+                    };
+
+                    registers[return_val] = register_value;
+                    ip += 1;
+                }
+                Instruction::AllocateArray { dest } => {
+                    registers[dest] = VMValue::Array(Array::create_for_vm());
+                    ip += 1;
+                }
+                Instruction::SetArrayIndex {
+                    array,
+                    index,
+                    value,
+                } => {
+                    let index = match &registers[index] {
+                        VMValue::Literal(lit) => match lit.as_ref() {
+                            Literal::Integer(integer) => integer,
+                            _ => unreachable!(),
+                        },
+                        _ => unreachable!(),
+                    };
+
+                    let array = match registers[array] {
+                        VMValue::Array(ref object) => object.clone(),
+                        _ => unreachable!(),
+                    };
+
+                    let value = match &registers[value] {
+                        VMValue::Literal(lit) => ObjectValue::Literal(lit.as_ref().clone()),
+                        VMValue::Object(object) => ObjectValue::Object(object.clone()),
+                        VMValue::Function(f) => ObjectValue::Function(f.clone()),
+                        VMValue::Array(array) => ObjectValue::Array(array.clone()),
+                        _ => unreachable!(),
+                    };
+
+                    array
+                        .borrow_mut()
+                        .set((*index) as usize, Rc::new(value.into()));
+
+                    ip += 1;
+                }
+                Instruction::GetArrayIndex {
+                    array,
+                    index,
+                    return_val,
+                } => {
+                    let index = match &registers[index] {
+                        VMValue::Literal(lit) => match lit.as_ref() {
+                            Literal::Integer(integer) => integer,
+                            _ => unreachable!(),
+                        },
+                        _ => unreachable!(),
+                    };
+
+                    let register_value = {
+                        let array = match registers[array] {
+                            VMValue::Array(ref a) => a.clone(),
+                            _ => unreachable!(),
+                        };
+                        let array = array.borrow();
+                        let array_value = array.index((*index) as usize);
+
+                        match array_value {
+                            Some(obj) => {
+                                let obj = obj.clone();
+                                let obj = obj.borrow();
+
+                                match &*obj {
+                                    ObjectValue::Object(rc) => VMValue::Object(rc.clone()),
+                                    ObjectValue::Literal(literal) => {
+                                        VMValue::Literal(Cow::Owned(literal.clone()))
+                                    }
+                                    ObjectValue::Function(func) => VMValue::Function(func.clone()),
+                                    ObjectValue::Array(rc) => VMValue::Array(rc.clone()),
+                                    ObjectValue::Nil => VMValue::Empty,
                                 }
                             }
                             None => VMValue::Empty,

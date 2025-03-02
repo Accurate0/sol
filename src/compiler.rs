@@ -484,6 +484,43 @@ impl Compiler {
 
                 Ok(register)
             }
+            Expression::Array { this } => {
+                let reg = self.get_register();
+
+                let instruction = Instruction::AllocateArray { dest: reg };
+                self.bytecode.borrow_mut().push(instruction);
+
+                for (i, value) in this.iter().enumerate() {
+                    let index =
+                        self.compile_expression(&Expression::Literal(Literal::Integer(i as i64)))?;
+                    let value = self.compile_expression(value)?;
+
+                    let instruction = Instruction::SetArrayIndex {
+                        array: reg,
+                        index,
+                        value,
+                    };
+
+                    self.bytecode.borrow_mut().push(instruction);
+                }
+
+                Ok(reg)
+            }
+            Expression::ArrayAccess { name, index } => {
+                let index = self.compile_expression(index)?;
+                let register = self.get_register();
+                let array_reg = self.compile_expression(&Expression::Variable(name.to_string()))?;
+
+                let instruction = Instruction::GetArrayIndex {
+                    array: array_reg,
+                    index,
+                    return_val: register,
+                };
+
+                self.bytecode.borrow_mut().push(instruction);
+
+                Ok(register)
+            }
         }
     }
 

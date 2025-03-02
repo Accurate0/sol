@@ -1,0 +1,5 @@
+---
+source: tests/integration.rs
+expression: output
+---
+["{\"x\": \"1\"}", "nil"]

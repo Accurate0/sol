@@ -7,6 +7,7 @@ pub fn print(args: Vec<VMValue>) -> Option<VMValue> {
             VMValue::Literal(literal) => print!("{}", literal.as_ref()),
             VMValue::Function(f) => print!("{}", f),
             VMValue::Object(object) => print!("{}", object.borrow()),
+            VMValue::Array(array) => print!("{}", array.borrow()),
         }
     }
 

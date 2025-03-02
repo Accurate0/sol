@@ -134,7 +134,14 @@ pub enum Expression {
     Object {
         fields: OrderMap<String, Expression>,
     },
+    Array {
+        this: Vec<Expression>,
+    },
     ObjectAccess {
         path: Vec<String>,
+    },
+    ArrayAccess {
+        name: String,
+        index: Box<Expression>,
     },
 }

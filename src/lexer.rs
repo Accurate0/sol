@@ -15,6 +15,8 @@ pub enum TokenKind {
     CloseParen,
     OpenBrace,
     CloseBrace,
+    OpenSquareBrace,
+    CloseSquareBrace,
     Add,
     Subtract,
     Multiply,
@@ -343,6 +345,8 @@ impl<'a> Cursor<'a> {
             '-' => Token::new(TokenKind::Subtract, single_char_span),
             '*' => Token::new(TokenKind::Multiply, single_char_span),
             ',' => Token::new(TokenKind::Comma, single_char_span),
+            '[' => Token::new(TokenKind::OpenSquareBrace, single_char_span),
+            ']' => Token::new(TokenKind::CloseSquareBrace, single_char_span),
 
             '!' if self.peek() == '=' => {
                 self.next();

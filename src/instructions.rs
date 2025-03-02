@@ -26,6 +26,9 @@ pub enum Instruction {
     AllocateObject {
         dest: Register,
     },
+    AllocateArray {
+        dest: Register,
+    },
     SetObjectField {
         object: Register,
         field: Register,
@@ -34,6 +37,16 @@ pub enum Instruction {
     GetObjectField {
         object: Register,
         field: Register,
+        return_val: Register,
+    },
+    SetArrayIndex {
+        array: Register,
+        index: Register,
+        value: Register,
+    },
+    GetArrayIndex {
+        array: Register,
+        index: Register,
         return_val: Register,
     },
     LoadLiteral {

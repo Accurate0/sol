@@ -1,0 +1,8 @@
+---
+source: tests/integration.rs
+expression: output
+---
+4
+3
+2
+1

@@ -45,6 +45,7 @@ pub enum DefinedType {
     Object {
         fields: OrderMap<String, DefinedType>,
     },
+    Array(Box<DefinedType>),
 }
 
 impl PartialEq for DefinedType {
@@ -62,6 +63,10 @@ impl PartialEq for DefinedType {
                 _ => false,
             },
             DefinedType::Nil => matches!(other, DefinedType::Nil),
+            DefinedType::Array(defined_type) => match other {
+                DefinedType::Array(other_defined_type) => defined_type.eq(other_defined_type),
+                _ => false,
+            },
         }
     }
 }

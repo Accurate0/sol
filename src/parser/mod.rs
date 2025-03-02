@@ -221,9 +221,34 @@ where
         Ok(ast::Expression::Object { fields })
     }
 
+    fn parse_array(&mut self) -> Result<ast::Expression, ParserError> {
+        self.consume(TokenKind::OpenSquareBrace)?;
+
+        let mut this = Vec::new();
+        loop {
+            if self.peek() == TokenKind::CloseSquareBrace {
+                break;
+            }
+
+            let value = self.parse_expression(0)?;
+            this.push(value);
+
+            if self.peek() == TokenKind::Comma {
+                self.consume(TokenKind::Comma)?;
+            } else {
+                break;
+            }
+        }
+
+        self.consume(TokenKind::CloseSquareBrace)?;
+
+        Ok(ast::Expression::Array { this })
+    }
+
     fn parse_expression(&mut self, binding_power: u8) -> Result<ast::Expression, ParserError> {
         let lhs = {
             match self.peek() {
+                TokenKind::OpenSquareBrace => self.parse_array(),
                 TokenKind::OpenBrace => self.parse_object(),
                 TokenKind::Identifier => self.parse_expression_identifier(),
                 TokenKind::OpenParen => {
@@ -285,6 +310,8 @@ where
                 TokenKind::NotEqual => ast::Operator::NotEqual,
                 // these don't belong to us, leave it for someone else to consume
                 TokenKind::Comma => break lhs,
+                TokenKind::CloseSquareBrace => break lhs,
+                TokenKind::Literal => break lhs,
                 TokenKind::OpenBrace => break lhs,
                 TokenKind::CloseParen => break lhs,
                 TokenKind::CloseBrace => break lhs,
@@ -344,6 +371,17 @@ where
         Ok(ast::Expression::ObjectAccess { path })
     }
 
+    fn parse_array_access(&mut self, first: &str) -> Result<ast::Expression, ParserError> {
+        self.consume(TokenKind::OpenSquareBrace)?;
+        let index = self.parse_expression(0)?;
+        self.consume(TokenKind::CloseSquareBrace)?;
+
+        Ok(ast::Expression::ArrayAccess {
+            index: Box::new(index),
+            name: first.to_owned(),
+        })
+    }
+
     fn parse_expression_identifier(&mut self) -> Result<ast::Expression, ParserError> {
         let token = self.consume(TokenKind::Identifier)?;
 
@@ -352,6 +390,7 @@ where
             "true" => Ok(ast::Expression::Literal(types::Literal::Boolean(true))),
             "false" => Ok(ast::Expression::Literal(types::Literal::Boolean(false))),
             name if self.peek() == TokenKind::Dot => self.parse_object_access(name),
+            name if self.peek() == TokenKind::OpenSquareBrace => self.parse_array_access(name),
             name if self.peek() == TokenKind::OpenParen => self.parse_function_call(name, false),
             name => self.parse_variable(name),
         }?;
