@@ -32,18 +32,17 @@ mod typechecker;
 mod types;
 mod vm;
 
+// TODO: Increase register count / reuse registers in some way....
+//       Find a way to reclaim registers once they are proved unused
+//       Collect a list of registers as we parse that won't be reused in a scope
+//       And every time we need one, check this list
 // TODO: Better errors, like Rust
-// TODO: Add arrays that aren't just objects with number indexes
 // TODO: Better dump printing
 // TODO: Add ability to include other files? C-style #include? files that are included can't have
 //       global code, only the "main" file can... for now
 // TODO: Add generic statemap type thing passed to each stdlib function
 //       This will let me trivially add networking
 //       Also move to another crate due to dependencies
-// TODO: Increase register count / reuse registers in some way....
-//       Find a way to reclaim registers once they are proved unused
-//       Collect a list of registers as we parse that won't be reused in a scope
-//       And every time we need one, check this list
 // TODO: Allow anonymous functions
 // TODO: Allows functions in objects in some way
 // TODO: Multi-crate setup
