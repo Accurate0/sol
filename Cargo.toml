@@ -4,22 +4,22 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-clap = { version = "4.5.32", features = ["derive"] }
+clap = { version = "4.5.47", features = ["derive"] }
 fxhash = "0.2.1"
-thiserror = "2.0.12"
+thiserror = "2.0.16"
 tracing = "0.1.41"
-tracing-subscriber = "0.3.19"
+tracing-subscriber = "0.3.20"
 itertools = "0.14.0"
-phf = { version = "0.11.3", features = ["macros"] }
-ordermap = "0.5.6"
+phf = { version = "0.13.1", features = ["macros"] }
+ordermap = "0.5.10"
 codespan-reporting = "0.12.0"
 
 [dev-dependencies]
 pretty_assertions = "1.4.1"
-assert_cmd = "2.0.16"
-insta = "1.42.2"
-rstest = "0.25.0"
-criterion = { version = "0.5", features = ["html_reports"] }
+assert_cmd = "2.0.17"
+insta = "1.43.2"
+rstest = "0.26.1"
+criterion = { version = "0.7", features = ["html_reports"] }
 pathdiff = "0.2.3"
 
 [[bench]]
