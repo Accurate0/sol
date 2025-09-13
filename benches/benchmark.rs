@@ -1,5 +1,5 @@
 use criterion::{criterion_group, criterion_main, BatchSize, Criterion};
-use sol::{lexer::Lexer, parser::Parser, typechecker::Typechecker};
+use sol::{compiler::Compiler, lexer::Lexer, parser::Parser, typechecker::Typechecker};
 
 // FIXME: errors are causing the benchmark to basically increase in memory forever
 
@@ -39,6 +39,19 @@ fn criterion_benchmark(c: &mut Criterion) {
                     .collect::<Vec<_>>()
             },
             move |statements| Typechecker::default().check(&statements),
+            BatchSize::SmallInput,
+        )
+    });
+
+    c.bench_function("compiler", |b| {
+        b.iter_batched(
+            || {
+                let lexer = Lexer::new(0, input);
+                Parser::new(lexer, input)
+                    .map(|s| s.unwrap())
+                    .collect::<Vec<_>>()
+            },
+            move |statements| Compiler::new().compile(&statements),
             BatchSize::SmallInput,
         )
     });
