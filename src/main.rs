@@ -36,6 +36,7 @@ mod vm;
 //       Find a way to reclaim registers once they are proved unused
 //       Collect a list of registers as we parse that won't be reused in a scope
 //       And every time we need one, check this list
+// TODO: Jump offsets are a u16, need to handle larger jumps with a trampoline
 // TODO: Better errors, like Rust
 // TODO: Better dump printing
 // TODO: Add ability to include other files? C-style #include? files that are included can't have
